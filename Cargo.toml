@@ -1,0 +1,22 @@
+[package]
+name = "h11spec"
+version = "0.0.0-202301.Jan.15"
+edition = "2021"
+rust-version = "1.60.0"
+authors = ["pinkforest"]
+description = "HTTP/1 Spec Testing"
+license = "Apache-2.0/MIT"
+readme = "README.md"
+homepage = "https://github/yaws-rs/h11spec"
+repository = "https://github/yaws-rs/h11spec"
+documentation = "https://docs.rs/h11spec"
+keywords = ["http"]
+categories = ["network-programming", "web-programming::http-server"]
+
+[features]
+
+[package.metadata.docs.rs]
+features = []
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
