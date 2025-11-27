@@ -1,0 +1,31 @@
+[package]
+name = "h11types"
+version = "0.0.1"
+edition = "2021"
+description = "h11spec core types"
+homepage = "https://github.com/yaws-rs/h11spec"
+keywords = ["io", "uring", "epoll", "async"]
+license = "Apache-2.0/MIT"
+readme = "README.md"
+repository = "https://github.com/yaws-rs/h11spec"
+categories = ["science"]
+
+[dependencies]
+logos = { version = "0.14", default-features = false, features = ["export_derive"] }
+yuri = { version = "0.1" }
+
+[dev-dependencies]
+insta = { version = "1.38" }
+rstest = { version = "0.19" }
+criterion = { version = "0.5" }
+
+[features]
+default = []
+alloc = []
+ptr = []
+static = []
+std = []
+
+[package.metadata.docs.rs]
+features = [""]
+

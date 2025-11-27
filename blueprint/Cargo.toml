@@ -1,0 +1,23 @@
+[package]
+name = "blueprint-h11spec"
+version = "0.0.1"
+edition = "2021"
+description = "yaws h11spec blueprint"
+homepage = "https://github.com/yaws-rs/h11spec"
+keywords = ["io", "uring", "epoll", "async"]
+license = "Apache-2.0/MIT"
+readme = "README.md"
+repository = "https://github.com/yaws-rs/h11spec"
+categories = ["science"]
+
+[dependencies]
+blueprint = { path = "../../blueprint", version = "0.0.1", default-features = false }
+h11types = { path = "../h11types", default-features = false }
+
+[features]
+default = []
+h11server = []
+
+[package.metadata.docs.rs]
+features = ["h11server"]
+
