@@ -18,6 +18,7 @@ yuri = { version = "0.1" }
 insta = { version = "1.38" }
 rstest = { version = "0.19" }
 criterion = { version = "0.5" }
+httparse = { version = "1.0" }
 
 [features]
 default = []
@@ -29,3 +30,7 @@ std = []
 [package.metadata.docs.rs]
 features = [""]
 
+[[bench]]
+name = "bencher"
+required-features = []
+harness = false

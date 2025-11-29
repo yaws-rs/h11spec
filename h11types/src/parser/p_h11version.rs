@@ -16,7 +16,9 @@ pub(crate) enum VersionToken<'raw> {
     Phantom(&'raw [u8]),
 }
 
-pub(crate) fn parse_h11version<'raw>(lexer: &mut Lexer<'raw, VersionToken<'raw>>) -> Result<H11Version, H11Error> {
+pub(crate) fn parse_h11version<'raw>(
+    lexer: &mut Lexer<'raw, VersionToken<'raw>>,
+) -> Result<H11Version, H11Error> {
     let mut ret: Option<H11Version> = None;
     let mut got_crlf = false;
     while let Some(token) = lexer.next() {
@@ -26,13 +28,12 @@ pub(crate) fn parse_h11version<'raw>(lexer: &mut Lexer<'raw, VersionToken<'raw>>
                 _ => return Err(H11Error::InvalidVersion),
             };
             ret = Some(version);
-        }
-        else {
+        } else {
             match token {
                 Ok(VersionToken::StatusEnd) => {
                     got_crlf = true;
                     break;
-                },
+                }
                 _ => return Err(H11Error::InvalidAfterVersion),
             }
         }
@@ -42,7 +43,7 @@ pub(crate) fn parse_h11version<'raw>(lexer: &mut Lexer<'raw, VersionToken<'raw>>
         Some(t) => match got_crlf {
             true => Ok(t),
             false => Err(H11Error::ExpectedCrLfAfterVersion),
-        }
+        },
     }
 }
 
@@ -53,7 +54,7 @@ mod test {
 
     #[rstest]
     #[case("HTTP/1.1\r\n", 10)]
-    fn parse_ok(#[case] input: &str, #[case] expected: usize) {   
+    fn parse_ok(#[case] input: &str, #[case] expected: usize) {
         let mut l = VersionToken::lexer(input.as_bytes());
         let r = parse_h11version(&mut l).unwrap();
         assert_eq!(r, H11Version::Http11);
@@ -74,8 +75,8 @@ mod test {
         let mut l = VersionToken::lexer(input.as_bytes());
         let r = parse_h11version(&mut l);
         assert_eq!(r, Err(H11Error::InvalidVersion));
-    }    
-    
+    }
+
     #[test]
     fn parse_err_expect_version() {
         let input = "";

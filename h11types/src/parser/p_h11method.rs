@@ -34,7 +34,9 @@ pub(crate) enum MethodToken<'raw> {
     Phantom(&'raw [u8]),
 }
 
-pub(crate) fn parse_h11method<'raw>(lexer: &mut Lexer<'raw, MethodToken<'raw>>) -> Result<H11Method, H11Error> {
+pub(crate) fn parse_h11method<'raw>(
+    lexer: &mut Lexer<'raw, MethodToken<'raw>>,
+) -> Result<H11Method, H11Error> {
     let mut ret: Option<H11Method> = None;
     let mut got_space = false;
     while let Some(token) = lexer.next() {
@@ -53,13 +55,12 @@ pub(crate) fn parse_h11method<'raw>(lexer: &mut Lexer<'raw, MethodToken<'raw>>) 
                 _ => return Err(H11Error::InvalidMethod),
             };
             ret = Some(maybe_method);
-        }
-        else {
+        } else {
             match token {
                 Ok(MethodToken::MethodSep) => {
                     got_space = true;
                     break;
-                },
+                }
                 _ => return Err(H11Error::InvalidAfterMethod),
             }
         }
@@ -69,7 +70,7 @@ pub(crate) fn parse_h11method<'raw>(lexer: &mut Lexer<'raw, MethodToken<'raw>>) 
         Some(m) => match got_space {
             true => Ok(m),
             false => Err(H11Error::ExpectedSpAfterMethod),
-        }
+        },
     }
 }
 
@@ -109,8 +110,8 @@ mod test {
         let mut l = MethodToken::lexer(input.as_bytes());
         let r = parse_h11method(&mut l);
         assert_eq!(r, Err(H11Error::InvalidMethod));
-    }    
-    
+    }
+
     #[test]
     fn parse_err_expect_method() {
         let input = "";

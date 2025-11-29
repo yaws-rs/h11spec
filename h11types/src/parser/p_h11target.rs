@@ -11,11 +11,13 @@ pub(crate) enum TargetToken<'raw> {
     MaybeTarget(&'raw [u8]),
     #[token(r" ")]
     TargetSep,
-//    #[allow(dead_code)]
-//    Phantom(&'raw [u8]),
+    //    #[allow(dead_code)]
+    //    Phantom(&'raw [u8]),
 }
 
-pub(crate) fn parse_h11target<'raw>(lexer: &mut Lexer<'raw, TargetToken<'raw>>) -> Result<&'raw [u8], H11Error> {
+pub(crate) fn parse_h11target<'raw>(
+    lexer: &mut Lexer<'raw, TargetToken<'raw>>,
+) -> Result<&'raw [u8], H11Error> {
     let mut ret: Option<&[u8]> = None;
     let mut got_space = false;
     while let Some(token) = lexer.next() {
@@ -25,13 +27,12 @@ pub(crate) fn parse_h11target<'raw>(lexer: &mut Lexer<'raw, TargetToken<'raw>>) 
                 _ => return Err(H11Error::InvalidTarget),
             };
             ret = Some(maybe_target);
-        }
-        else {
+        } else {
             match token {
                 Ok(TargetToken::TargetSep) => {
                     got_space = true;
                     break;
-                },
+                }
                 _ => return Err(H11Error::InvalidAfterTarget),
             }
         }
@@ -41,7 +42,7 @@ pub(crate) fn parse_h11target<'raw>(lexer: &mut Lexer<'raw, TargetToken<'raw>>) 
         Some(t) => match got_space {
             true => Ok(t),
             false => Err(H11Error::ExpectedSpAfterTarget),
-        }
+        },
     }
 }
 
@@ -52,8 +53,8 @@ mod test {
 
     #[rstest]
     #[case("/ ", 1)]
-    #[case("/foo?bar=baz&nn=z#anchors ", 25)]    
-    fn parse_ok(#[case] input: &str, #[case] expected: usize) {   
+    #[case("/foo?bar=baz&nn=z#anchors ", 25)]
+    fn parse_ok(#[case] input: &str, #[case] expected: usize) {
         let mut l = TargetToken::lexer(input.as_bytes());
         let r = parse_h11target(&mut l).unwrap();
         assert_eq!(r.len(), expected);
@@ -73,8 +74,8 @@ mod test {
         let mut l = TargetToken::lexer(input.as_bytes());
         let r = parse_h11target(&mut l);
         assert_eq!(r, Err(H11Error::InvalidTarget));
-    }    
-    
+    }
+
     #[test]
     fn parse_err_expect_target() {
         let input = "";

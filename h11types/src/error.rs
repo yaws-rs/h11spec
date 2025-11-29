@@ -29,4 +29,6 @@ pub enum H11Error {
     InvalidAfterVersion,
     /// Header key is not a IANA registered header
     MissingHeaderKey,
+    /// Encountered invalid header at position
+    InvalidHeaders(usize),
 }

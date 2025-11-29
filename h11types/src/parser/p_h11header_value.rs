@@ -2,12 +2,12 @@
 
 use logos::{Lexer, Logos};
 
-use crate::generated::h11header_name_tokens::HeaderKeyToken;
+use crate::generated::h11header_value_tokens::HeaderValueToken;
 use crate::H11Error;
 
 #[inline]
-pub(crate) fn parse_h11header_key<'raw>(
-    lexer: &mut Lexer<'raw, HeaderKeyToken<'raw>>,
+pub(crate) fn parse_h11header_value<'raw>(
+    lexer: &mut Lexer<'raw, HeaderValueToken<'raw>>,
 ) -> Result<usize, H11Error> {
     while let Some(token) = lexer.next() {
         match token {

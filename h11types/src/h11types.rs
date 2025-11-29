@@ -5,7 +5,6 @@
 /// # Transfer coding
 /// Registry at https://www.iana.org/assignments/http-parameters
 ///
-
 use core::mem::MaybeUninit;
 
 mod method;
@@ -68,7 +67,6 @@ pub struct H11RequestMeta {
     pub(crate) transfer_encoding: H11TransferEncoding,
     pub(crate) transfer_compression: H11TransferCompression,
     pub(crate) body_length: Option<usize>,
-    pub(crate) status_end: Option<usize>,
     pub(crate) headers_end: Option<usize>,
 }
 
@@ -76,9 +74,14 @@ impl H11RequestMeta {
     /// Is the status line parsing complete?
     #[inline]
     pub fn status_complete(&self) -> bool {
-        self.method != H11Method::Unknown &&
-            self.target_loc.is_some() &&
-            self.version != H11Version::Unknown
+        self.method != H11Method::Unknown
+            && self.target_loc.is_some()
+            && self.version != H11Version::Unknown
+    }
+    /// Are the headers complete?
+    #[inline]
+    pub fn headers_complete(&self) -> bool {
+        self.headers_end.is_some()
     }
 }
 
