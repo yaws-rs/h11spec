@@ -1,3 +1,7 @@
 [workspace]
+<<<<<<< HEAD
 members = ["h11types", "iana"]
+=======
+members = ["h11_parse", "h11_builder"]
+>>>>>>> e47ec55 (Update conformance)
 resolver = "2"
