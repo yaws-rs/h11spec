@@ -11,12 +11,13 @@ repository = "https://github.com/yaws-rs/h11spec"
 categories = ["science"]
 
 [dependencies]
-blueprint = { path = "../../blueprint", version = "0.0.1", default-features = false }
+blueprint = { path = "../../blueprint", version = "0.1.0", default-features = false }
 h11types = { path = "../h11types", default-features = false }
 
 [features]
 default = []
 h11server = []
+std = []
 
 [package.metadata.docs.rs]
 features = ["h11server"]

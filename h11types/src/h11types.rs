@@ -16,7 +16,7 @@ pub enum H11TransferEncoding {
     ///
     #[default]
     None,
-    ///
+    /// Chunked encoding
     Chunked,
 }
 
@@ -30,31 +30,31 @@ pub enum H11Version {
     Http11,
 }
 
-///
+/// HTTP Connection
 #[derive(Debug, Default)]
 pub enum H11Connection {
-    ///
+    /// Close
     #[default]
     Close,
-    ///
+    /// Keep-Alive
     KeepAlive,
 }
 
-///
+/// HTTP Compression scheme
 #[derive(Debug, Default)]
 pub enum H11TransferCompression {
     ///
     #[default]
     None,
-    ///
+    /// Compress
     Compress,
-    ///
+    /// Deflate
     Deflate,
-    ///
+    /// Gzip
     Gzip,
-    ///
+    /// Brotli
     Br,
-    ///
+    /// Zstd
     Zstd,
 }
 
