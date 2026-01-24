@@ -6,7 +6,8 @@ use crate::H11Error;
 use crate::H11Method;
 
 #[derive(Debug, Logos)]
-#[logos(source = [u8])]
+#[logos(utf8 = false)]
+//#[logos(source = [u8])]
 pub(crate) enum MethodToken<'raw> {
     #[token("CONNECT")]
     Connect,

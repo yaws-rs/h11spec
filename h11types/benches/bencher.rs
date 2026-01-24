@@ -27,7 +27,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 
     c.bench_function("httparse equivalent parse_headers - three headers", |b| {
-        let mut headers = [httparse::EMPTY_HEADER; 3];
+        let mut headers = [httparse::EMPTY_HEADER; 30];
 
         b.iter(|| {
             httparse::parse_headers(black_box(&input_headers), &mut headers).unwrap();

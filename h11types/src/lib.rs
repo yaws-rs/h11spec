@@ -28,6 +28,10 @@ mod h11types;
 #[doc(inline)]
 pub use h11types::*;
 
+mod resp_status;
+#[doc(inline)]
+pub use resp_status::*;
+
 //-----------------------------------------------
 // Parser impls
 //-----------------------------------------------
@@ -37,11 +41,11 @@ mod parser;
 // Auto-generated types
 //-----------------------------------------------
 pub(crate) mod generated {
-    pub(crate) mod h11header_name;
-    pub(crate) mod h11header_name_tokens;
+    //pub(crate) mod h11header_name;
+    //pub(crate) mod h11header_name_tokens;
     pub(crate) mod h11header_name_value_tokens;
-    pub(crate) mod h11header_value_tokens;
+    //pub(crate) mod h11header_value_tokens;
     pub(crate) mod util;
 }
-#[doc(inline)]
-pub use generated::h11header_name::*;
+//#[doc(inline)]
+//pub use generated::h11header_name::*;

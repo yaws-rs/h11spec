@@ -5,7 +5,8 @@ use logos::{Lexer, Logos};
 use crate::H11Error;
 
 #[derive(Debug, Logos)]
-#[logos(source = [u8])]
+#[logos(utf8 = false)]
+//#[logos(source = [u8])]
 pub(crate) enum TargetToken<'raw> {
     #[regex(r"[^\s\r]+", |lex| lex.slice(), priority = 200)]
     MaybeTarget(&'raw [u8]),

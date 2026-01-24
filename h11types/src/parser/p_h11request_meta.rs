@@ -10,15 +10,19 @@ use crate::H11Method;
 use crate::H11RequestMeta;
 use crate::H11Version;
 
-use crate::parser::{parse_h11method, MethodToken};
-use crate::parser::{parse_h11target, TargetToken};
-use crate::parser::{parse_h11version, VersionToken};
-
-use crate::generated::{
-    h11header_name_tokens::HeaderKeyToken, h11header_value_tokens::HeaderValueToken,
+#[cfg(not(h11types_status_parser = "httparse"))]
+use crate::parser::{
+    parse_h11method, MethodToken,
+    parse_h11target, TargetToken,
+    parse_h11version, VersionToken
 };
-use crate::parser::{parse_h11header_key, parse_h11header_value};
 
+//use crate::generated::{
+//    h11header_name_tokens::HeaderKeyToken, h11header_value_tokens::HeaderValueToken,
+//};
+//use crate::parser::{parse_h11header_key, parse_h11header_value};
+
+#[cfg(not(h11types_status_parser = "httparse"))]
 impl H11RequestMeta {
     /// Advance parsing the status line with the given input buffer
     #[inline]
@@ -47,8 +51,10 @@ impl H11RequestMeta {
     }
 }
 
+#[cfg(not(h11types_header_parser = "httparse"))]
 use crate::generated::h11header_name_value_tokens::HeaderKeyValueToken;
 
+#[cfg(not(h11types_header_parser = "logos"))]
 impl H11RequestMeta {
     /// Advance parsing the headers with the given input buffer.
     /// # Minimum Input
