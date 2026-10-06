@@ -1,0 +1,29 @@
+---
+source: h11types/src/parser/p_h11request_meta/rfc_9110/rfc_9110_s5_3.rs
+expression: "HeaderTc { tc_input, tester, res, meta }"
+---
+HeaderTc {
+    tc_input: "Content-length: 200\r\nSet-Cookie: 3\r\nSet-Cookie: 2\r\nSet-Cookie: 1\r\n",
+    tester: HeaderTest {
+        seen: [
+            "ContentLength(Integer(200))",
+            "SetCookie(Integer(3))",
+            "SetCookie(Integer(2))",
+            "SetCookie(Integer(1))",
+        ],
+    },
+    res: Ok(
+        66,
+    ),
+    meta: H11RequestMeta {
+        method: Unknown,
+        target_loc: None,
+        version: Unknown,
+        transfer_encoding: None,
+        transfer_compression: None,
+        body_length: Some(
+            200,
+        ),
+        headers_end: None,
+    },
+}

@@ -1,0 +1,14 @@
+---
+source: h11types/src/parser/p_h11header.rs
+expression: "InternalTc { input: tc_input, output: r }"
+---
+InternalTc {
+    input: "A: ffffoo.bar\r\nB: foo\r\n\r\n",
+    output: TestReceiver {
+        hdrs: [
+            "Hu[A=ffffoo.bar]",
+            "Hu[B=foo]",
+        ],
+        finished: true,
+    },
+}

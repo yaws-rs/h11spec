@@ -1,0 +1,25 @@
+---
+source: h11types/src/parser/p_h11request_meta.rs
+expression: "HeaderTc { tc_input, tester, res, meta }"
+---
+HeaderTc {
+    tc_input: "Content-length: 20x\r\nSet-Cookie: 3\r\nSet-Cookie: 2\r\nSet-Cookie: 1\r\n",
+    tester: HeaderTest {
+        seen: [],
+    },
+    res: Err(
+        InvalidHeaderValue(
+            17,
+            ExpectedInteger,
+        ),
+    ),
+    meta: H11RequestMeta {
+        method: Unknown,
+        target_loc: None,
+        version: Unknown,
+        transfer_encoding: None,
+        transfer_compression: None,
+        body_length: None,
+        headers_end: None,
+    },
+}

@@ -8,6 +8,12 @@ use crate::H11Error;
 /// empty for now
 pub struct Position;
 
+/*
+pub trait H11Application {
+    fn req_start(&mut self, _method: H11Method, _uri: Uri) -> 
+}
+*/
+
 /// State machine stages
 #[derive(Debug, Default, PartialEq)]
 pub enum H11ServingStage {
@@ -43,6 +49,8 @@ pub struct H11Serving {
     out_sent: usize,
 }
 
+use h11types::NoReceiver;
+
 impl Orbit for H11Serving {
     type Position = Position;
     type Error = H11Error;
@@ -70,29 +78,40 @@ impl Orbit for H11Serving {
         println!("Got data in = {}", core::str::from_utf8(&left_in_b).unwrap());
 
         let mut out_len = left_out_len;
+
+        let mut discard = 0;
         
         loop {
         
             match self.stage {
                 H11ServingStage::Start => {
                     println!("ServingStatus - Start");
-                    let advanced = match self.req_meta.advance_status_with(&left_in_b) {
-                        Ok(b) => _ = left_in_b.split_off_mut(..b).unwrap(),
+                    let advanced = match self.req_meta.advance_status_with(&mut NoReceiver, &left_in_b) {
+                        Ok(b) => b,
                         Err(e) => panic!("Advance error..{:?}", e),
                     };
-                    
+
+                    left_in_b.split_off_mut(..advanced).unwrap();
+                    discard += advanced;
+
                     if self.req_meta.status_complete() {
                         self.stage = H11ServingStage::Headers;
+//                        self.stage = H11ServingStage::Passthrough;
                         continue;
                     }
                 },
                 H11ServingStage::Headers => {
                     println!("ServingStatus - Headers");
-                    let advanced = match self.req_meta.advance_headers_with(&left_in_b) {
+
+                    println!("Headers in: ---{}===", core::str::from_utf8(left_in_b).unwrap());
+                    
+                    let advanced = match self.req_meta.advance_headers_with(&mut NoReceiver, &left_in_b) {
                         Ok(b) => _ = left_in_b.split_off_mut(..b).unwrap(),
                         Err(e) => panic!("Headers advance error {:?}", e),
                     };
 
+                    println!("Remaining [{:?}]", left_in_b);
+                    
                     if self.req_meta.headers_complete() {
                         self.stage = H11ServingStage::Passthrough;
                         continue;
@@ -114,7 +133,7 @@ impl Orbit for H11Serving {
                         left_out_b[0..resp.len()].copy_from_slice(resp);
                         out_len += resp.len();
                         
-                        let mut remaining = left_out_b.len() - out_len;
+                        let mut remaining = left_out_b.len() - 22 - out_len;
 
                         if remaining > rick_len {
                             remaining = rick_len;
@@ -130,7 +149,7 @@ impl Orbit for H11Serving {
                     }
                     else {
                         let consumed = self.payload_out_cursor.consumed;
-                        let remaining_capacity = left_out_b.len() - left_out_len;
+                        let remaining_capacity = left_out_b.len() - left_out_len - 22;
 
                         println!("Rick-Roll continue with consumed = {consumed} and remaining_capacity = {remaining_capacity}");
                         

@@ -11,7 +11,7 @@ repository = "https://github.com/yaws-rs/h11spec"
 categories = ["science"]
 
 [dependencies]
-blueprint = { path = "../../blueprint", version = "0.1.0", default-features = false }
+blueprint = { version = "0.2.0", default-features = false }
 h11types = { path = "../h11types", default-features = false }
 
 [features]

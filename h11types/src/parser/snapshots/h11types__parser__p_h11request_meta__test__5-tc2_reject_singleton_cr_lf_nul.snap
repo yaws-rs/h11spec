@@ -1,0 +1,24 @@
+---
+source: h11types/src/parser/p_h11request_meta.rs
+expression: "HeaderTc { tc_input, tester, res, meta }"
+---
+HeaderTc {
+    tc_input: "Ho\rst:  foo.bar\r\n",
+    tester: HeaderTest {
+        seen: [],
+    },
+    res: Err(
+        InvalidHeaders(
+            0,
+        ),
+    ),
+    meta: H11RequestMeta {
+        method: Unknown,
+        target_loc: None,
+        version: Unknown,
+        transfer_encoding: None,
+        transfer_compression: None,
+        body_length: None,
+        headers_end: None,
+    },
+}
