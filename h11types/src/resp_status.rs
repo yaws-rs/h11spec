@@ -11,20 +11,56 @@ pub enum AuthChallenge {
     Digest,
 }
 
+/// Final response relative to Target / Host etc.
+pub enum RespComplete<'uri, 'desc> {
+    /// 2xx Series
+    Resp2xx(Resp2xx<'desc>),
+    /// 3xx Series
+    Resp3xx(Resp3xx<'uri>),
+    /// 4xx Series
+    Resp4xx(Resp4xx),    
+}
+
 /// Indicative response relative to Target / Host etc.
 #[derive(Clone, Debug, PartialEq)]
 pub enum RespIndicative<'uri> {
     /// Intermediate - Request is welcome without conditions
     GoAhead,
     /// 3xx Series
-    R3xx(Intermediate3xx<'uri>),
+    R3xx(Resp3xx<'uri>),
     /// 4xx Series
-    R4xx(Intermediate4xx),
+    R4xx(Resp4xx),
 }
 
-/// Intermediate 3xx Responses
+/// Status description
 #[derive(Clone, Debug, PartialEq)]
-pub enum Intermediate3xx<'uri> {
+pub struct StatusDesc<'desc> {
+    inner: &'desc str,
+}
+
+impl<'desc> StatusDesc<'desc> {
+    /// WARNING: This allows <CR> and other illegal characters.
+    /// It is up to the implementer to provide legit status description.
+    #[inline]
+    pub fn new_unchecked(inner: &'desc str) -> Self {
+        Self { inner }
+    }
+    /// Status is OK 2xx
+    pub fn ok() -> Self {
+        Self { inner: "Ok" }
+    }
+}
+
+/// 2xx Responses
+#[derive(Clone, Debug, PartialEq)]
+pub enum Resp2xx<'desc> {
+    /// 200 - Ok
+    Ok(StatusDesc<'desc>),
+}
+
+/// 3xx Responses
+#[derive(Clone, Debug, PartialEq)]
+pub enum Resp3xx<'uri> {
     /// 301 - Moved Permanently
     MovedPermanently(Uri<'uri>),
     /// 302 - Found
@@ -39,9 +75,9 @@ pub enum Intermediate3xx<'uri> {
     Other(u8, Option<Uri<'uri>>),
 }
 
-/// Intermediate 4xx Response
+/// 4xx Response
 #[derive(Clone, Debug, PartialEq)]
-pub enum Intermediate4xx {
+pub enum Resp4xx {
     /// 400 - Bad Request
     BadRequest,
     /// 401 - Authentication is required

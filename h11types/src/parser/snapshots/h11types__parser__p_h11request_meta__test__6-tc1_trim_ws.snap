@@ -1,0 +1,24 @@
+---
+source: h11types/src/parser/p_h11request_meta.rs
+expression: "HeaderTc { tc_input, tester, res, meta }"
+---
+HeaderTc {
+    tc_input: "Set-Cookie:   \"foo bar\"   \r\n",
+    tester: HeaderTest {
+        seen: [
+            "SetCookie(Bytes([102, 111, 111, 32, 98, 97, 114]))",
+        ],
+    },
+    res: Ok(
+        28,
+    ),
+    meta: H11RequestMeta {
+        method: Unknown,
+        target_loc: None,
+        version: Unknown,
+        transfer_encoding: None,
+        transfer_compression: None,
+        body_length: None,
+        headers_end: None,
+    },
+}

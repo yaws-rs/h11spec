@@ -14,10 +14,12 @@ categories = ["science"]
 #logos = { version = "0.14", default-features = false, features = ["export_derive"] }
 logos = { version = "0.16", default-features = false, features = ["export_derive"] }
 yuri = { version = "0.1" }
+# maciejhirsz/logos/issues/568
+#quoted-values = { version = "0.1", features = ["decode"] }
 
 [dev-dependencies]
-insta = { version = "1.38" }
-rstest = { version = "0.19" }
+insta = { version = "1.47" }
+rstest = { version = "0.26" }
 criterion = { version = "0.5" }
 httparse = { version = "1.0" }
 
@@ -35,3 +37,10 @@ features = [""]
 name = "bencher"
 required-features = []
 harness = false
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+  'cfg(h11types_status_parser, values("httparse"))',
+  'cfg(h11types_header_parser, values("httparse"))',
+  'cfg(h11types_kv, values("combined"))',
+] }

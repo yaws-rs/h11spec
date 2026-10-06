@@ -1,0 +1,28 @@
+---
+source: h11types/src/parser/p_h11request_meta/rfc_9110/rfc_9110_s5_3.rs
+expression: "HeaderTc { tc_input, tester, res, meta }"
+---
+HeaderTc {
+    tc_input: "Content-Length: 42\r\nContent-Length: 44\r\n",
+    tester: HeaderTest {
+        seen: [
+            "ContentLength(Integer(42))",
+        ],
+    },
+    res: Err(
+        DuplicateHeader(
+            20,
+        ),
+    ),
+    meta: H11RequestMeta {
+        method: Unknown,
+        target_loc: None,
+        version: Unknown,
+        transfer_encoding: None,
+        transfer_compression: None,
+        body_length: Some(
+            42,
+        ),
+        headers_end: None,
+    },
+}

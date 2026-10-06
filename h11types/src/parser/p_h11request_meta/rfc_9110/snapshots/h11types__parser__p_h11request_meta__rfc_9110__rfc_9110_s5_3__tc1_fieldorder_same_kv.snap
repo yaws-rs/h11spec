@@ -1,0 +1,31 @@
+---
+source: h11types/src/parser/p_h11request_meta/rfc_9110/rfc_9110_s5_3.rs
+expression: "TcExpected { tc_input, tester, res, meta }"
+---
+TcExpected {
+    tc_input: Tc {
+        raw_in: "Content-length: 200\r\nX-Header-1: 3\r\nX-Header-2: 2\r\nX-Header-3: 1\r\n",
+    },
+    tester: HeaderTest {
+        seen: [
+            "ContentLength(200)",
+            "Other/X-Header-1 val:  3\r\n",
+            "Other/X-Header-2 val:  2\r\n",
+            "Other/X-Header-3 val:  1\r\n",
+        ],
+    },
+    res: Ok(
+        66,
+    ),
+    meta: H11RequestMeta {
+        method: Unknown,
+        target_loc: None,
+        version: Unknown,
+        transfer_encoding: None,
+        transfer_compression: None,
+        body_length: Some(
+            200,
+        ),
+        headers_end: None,
+    },
+}

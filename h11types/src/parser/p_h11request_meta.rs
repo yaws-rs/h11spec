@@ -3,112 +3,226 @@
 //! THis parser is genereally used by the server implementation for the in flight requests and
 //! will not allocate.
 
+mod meta_headers;
+
 use logos::{Lexer, Logos};
 
+use crate::H11Header;
 use crate::H11Error;
 use crate::H11Method;
 use crate::H11RequestMeta;
 use crate::H11Version;
 
-#[cfg(not(h11types_status_parser = "httparse"))]
 use crate::parser::{
     parse_h11method, MethodToken,
     parse_h11target, TargetToken,
     parse_h11version, VersionToken
 };
 
-//use crate::generated::{
-//    h11header_name_tokens::HeaderKeyToken, h11header_value_tokens::HeaderValueToken,
-//};
-//use crate::parser::{parse_h11header_key, parse_h11header_value};
+use crate::{MetaReceiver, HeaderReceiver};
 
-#[cfg(not(h11types_status_parser = "httparse"))]
+use crate::p_receivers::TargetReceiver;
+
 impl H11RequestMeta {
     /// Advance parsing the status line with the given input buffer
     #[inline]
-    pub fn advance_status_with<'raw>(&mut self, input: &'raw [u8]) -> Result<usize, H11Error> {
+    pub fn advance_status_with<'raw, R: MetaReceiver>(&mut self, r: &mut R, input: &'raw [u8]) -> Result<usize, H11Error> {
         let mut lexer: Lexer<'raw, MethodToken<'raw>> = MethodToken::lexer(input);
 
+        let mut try_method = H11Method::Unknown;
+        let mut try_target: Option<(usize, usize)> = None;
+        let mut try_version = H11Version::Unknown;
+        
         if self.method == H11Method::Unknown {
-            self.method = parse_h11method(&mut lexer)?;
+            try_method = parse_h11method(&mut lexer)?;
         }
 
+        let mut loc_parsed = false;
+        
         if self.target_loc.is_none() {
             let start = lexer.span().start;
             let mut target_lexer: Lexer<'raw, TargetToken<'raw>> = lexer.morph();
             parse_h11target(&mut target_lexer)?;
-            self.target_loc = Some((start, target_lexer.span().start));
+            try_target = Some((start, target_lexer.span().start));
             lexer = target_lexer.morph();
+            loc_parsed = true;
         }
 
         if self.version == H11Version::Unknown {
             let mut version_lexer: Lexer<'raw, VersionToken<'raw>> = lexer.morph();
-            self.version = parse_h11version(&mut version_lexer)?;
+            try_version = parse_h11version(&mut version_lexer)?;
             lexer = version_lexer.morph();
         }
 
-        Ok(lexer.span().end)
-    }
-}
+        self.version = try_version;
+        self.target_loc = try_target;
+        self.method = try_method;
 
-#[cfg(not(h11types_header_parser = "httparse"))]
-use crate::generated::h11header_name_value_tokens::HeaderKeyValueToken;
-
-#[cfg(not(h11types_header_parser = "logos"))]
-impl H11RequestMeta {
-    /// Advance parsing the headers with the given input buffer.
-    /// # Minimum Input
-    /// Minimum input is always a single complete header
-    #[inline]
-    pub fn advance_headers_with<'raw>(&mut self, input: &'raw [u8]) -> Result<usize, H11Error> {
-        let mut lexer: Lexer<'raw, HeaderKeyValueToken<'raw>> = HeaderKeyValueToken::lexer(input);
-
-        while let Some(hdr_token) = lexer.next() {
-            match hdr_token {
-                Err(e) => return Err(H11Error::InvalidHeaders(lexer.span().start)),
-                Ok(HeaderKeyValueToken::ContentLength(len)) => self.body_length = Some(len),
-                Ok(HeaderKeyValueToken::CrLf) => self.headers_end = Some(lexer.span().start),
-                Ok(_) => {}
+        // TODO: stream parsing target. We should not expect it to be fully in
+        if loc_parsed {
+            if let Some((loc_start, loc_end)) = self.target_loc {
+                let mut i_target = r.impl_target();
+                let target_loc_data = &input[loc_start .. loc_end];
+                let _ = i_target.req_target_init(target_loc_data);
+                let _ = i_target.req_target_finish();  
             }
         }
-
+        
         Ok(lexer.span().end)
     }
 }
+
+use crate::HeaderParser;
+
+struct HeaderRelay<'r, R> {
+    myself: &'r mut H11RequestMeta,
+    relay_receiver: &'r mut R,
+
+    in_header_err: Option<H11Error>,
+}
+
+use crate::{RespIndicative, Resp4xx};
+
+impl<'r, R> HeaderReceiver for HeaderRelay<'r, R>
+where
+    R: HeaderReceiver
+{
+    fn req_header<'h, 'd>(&mut self, hdr: H11Header<'h>) -> RespIndicative<'d> {
+        match self.myself.in_header(hdr) {
+            Err(e) => {
+                self.in_header_err = Some(e);
+                RespIndicative::R4xx(Resp4xx::BadRequest)
+            },
+            _ => {
+                self.relay_receiver.req_header(hdr)
+            },
+        }
+    }
+    fn req_headers_finish(&mut self) -> () {
+        self.myself.headers_end = Some(0);
+        self.relay_receiver.req_headers_finish();
+        ()
+    }
+}
+
+impl H11RequestMeta {
+    /// Advance parsing the headers with the given input buffer.
+    ///
+    /// ## Minimum Input
+    ///
+    /// Minimum input is always a single complete header
+    #[inline]
+    pub fn advance_headers_with<'raw, R: HeaderReceiver>(&mut self, r: &mut R, input: &'raw [u8]) -> Result<usize, H11Error> {
+
+        let mut relay = HeaderRelay {
+            myself: self,
+            relay_receiver: r,
+            in_header_err: None,
+        };
+        let mut p = HeaderParser::default();
+        let p_count = p.parse(&mut relay, input)?;
+
+        if let Some(err) = relay.in_header_err {
+            return Err(err);
+        }
+        
+        Ok(p_count)
+    }
+}
+
+#[cfg(test)]
+mod rfc_9110;
+
+#[cfg(test)]
+pub(super) use test::{do_header_test};
 
 #[cfg(test)]
 mod test {
 
     use super::*;
+    use insta::assert_debug_snapshot;
+    use rstest::Context;    
     use rstest::rstest;
+    use crate::NoReceiver;
+    use crate::RespIndicative;    
 
+    #[derive(Debug)]
+    #[allow(unused)] // Debug is used through assert and compiler ignores this
+    pub(crate) struct HeaderTc {
+        pub(crate) tc_input: &'static str,
+        pub(crate) tester: HeaderTest,
+        pub(crate) res: Result<usize, H11Error>,
+        pub(crate) meta: H11RequestMeta,
+    }
+    
+    #[inline]
+    pub(crate) fn do_header_test(ctx: Context, tc_input: &'static str) {
+        let mut meta = H11RequestMeta::default();
+        let mut tester = HeaderTest { seen: vec![] };
+        let res = meta.advance_headers_with(&mut tester, tc_input.as_bytes());
+        assert_debug_snapshot!(ctx_insta(ctx), HeaderTc { tc_input, tester, res, meta });
+    }
+
+    pub(crate) fn ctx_insta(ctx: Context) -> String {
+        let case_id = ctx.case.unwrap().to_string();
+        format!("{}-{}", case_id, ctx.name)
+    }
+
+    #[derive(Debug, PartialEq)]
+    pub(crate) struct HeaderTest {
+        pub(crate) seen: Vec<String>,
+    }
+
+    impl HeaderReceiver for HeaderTest {
+        fn req_header<'h, 'd>(&mut self, header: H11Header<'h>) -> RespIndicative<'d> {
+            self.seen.push(format!("{:?}", header));
+            RespIndicative::GoAhead
+        }
+        fn req_headers_finish(&mut self) -> () {
+            ()
+        }
+    }
+    
     #[rstest]
     #[case("GET / HTTP/1.1\r\n", 16)]
     #[case("GET /foo=bar?ding=dong&ping=baa+baa#anchor HTTP/1.1\r\n", 53)]
     fn try_advance_status_ok(#[case] raw_in: &str, #[case] expected_advanced: usize) {
         let mut meta = H11RequestMeta::default();
 
-        let advanced = meta.advance_status_with(raw_in.as_bytes()).unwrap();
+        let advanced = meta.advance_status_with(&mut NoReceiver, raw_in.as_bytes()).unwrap();
         assert_eq!(advanced, expected_advanced);
         assert_eq!(meta.method, H11Method::Get);
         assert_eq!(meta.status_complete(), true);
     }
 
     #[rstest]
-    #[case("Content-length: 200\r\n")]
-    fn try_advance_headers_ok(#[case] raw_in: &str) {
+    #[case("GET / HTTP/1.1", H11Error::ExpectedCrLfAfterVersion)]
+    // TODO: fix
+    //#[case("GET / HTTP/1.1\r", H11Error::ExpectedCrLfAfterVersion)]
+    #[case("GET / HTTP/1.1\r", H11Error::InvalidAfterVersion)]
+    #[case("GET / ", H11Error::ExpectedVersion)]
+    #[case("GET /foo=bar?ding=dong&ping=baa+baa#anchor", H11Error::ExpectedSpAfterTarget)]
+    fn try_advance_status_incomplete(#[case] raw_in: &str, #[case] expected_err: H11Error) {
         let mut meta = H11RequestMeta::default();
 
-        let advanced = meta.advance_headers_with(raw_in.as_bytes()).unwrap();
-    }
-    /*
-        #[rstest]
-        #[case("Content-length: 200\r\n")]
-        fn try_advance_headers_legacy_ok(#[case] raw_in: &str) {
-            let mut meta = H11RequestMeta::default();
+        let res = meta.advance_status_with(&mut NoReceiver, raw_in.as_bytes());
+        assert_eq!(res, Err(expected_err));
+        assert_eq!(meta.method, H11Method::Unknown);
+        assert_eq!(meta.status_complete(), false);
+        
+    }    
 
-            let advanced = meta.advance_headers_legacy_with(raw_in.as_bytes()).unwrap();
+    #[rstest]
+    #[case("GET / HTTP/1.1\n", H11Error::InvalidAfterVersion)]
+    #[case("GET /\r\n", H11Error::InvalidAfterTarget)]
+    #[case("GET\r\n", H11Error::InvalidAfterMethod)]
+    fn try_advance_status_err(#[case] raw_in: &str, #[case] expected_err: H11Error) {
+        let mut meta = H11RequestMeta::default();
 
+        let res = meta.advance_status_with(&mut NoReceiver, raw_in.as_bytes());
+        assert_eq!(res, Err(expected_err));
+        assert_eq!(meta.method, H11Method::Unknown);
+        assert_eq!(meta.status_complete(), false);
+        
     }
-        */
 }

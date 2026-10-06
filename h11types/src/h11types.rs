@@ -5,13 +5,11 @@
 /// # Transfer coding
 /// Registry at https://www.iana.org/assignments/http-parameters
 ///
-use core::mem::MaybeUninit;
-
 mod method;
 pub use method::*;
 
 ///
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub enum H11TransferEncoding {
     ///
     #[default]
@@ -30,8 +28,8 @@ pub enum H11Version {
     Http11,
 }
 
-/// HTTP Connection
-#[derive(Debug, Default)]
+/// HTTP Connection type - RFC 9110 7.6.1
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub enum H11Connection {
     /// Close
     #[default]
@@ -41,7 +39,7 @@ pub enum H11Connection {
 }
 
 /// HTTP Compression scheme
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub enum H11TransferCompression {
     ///
     #[default]
@@ -59,7 +57,7 @@ pub enum H11TransferCompression {
 }
 
 /// Used by the server
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub struct H11RequestMeta {
     pub(crate) method: H11Method,
     pub(crate) target_loc: Option<(usize, usize)>,
@@ -85,35 +83,16 @@ impl H11RequestMeta {
     }
 }
 
-///
-#[derive(Debug)]
-pub enum H11Path<const S: usize> {
-    /// Heap Allocated variant
-    #[cfg(any(feature = "std", feature = "alloc"))]
-    Heap(H11PathHeap),
-    /// Static const generic variant
-    #[cfg(feature = "static")]
-    Static(H11PathStatic<{ S }>),
-    /// Ptr ref variant
-    #[cfg(feature = "ptr")]
-    Ptr(*const u8, usize),
+
+/// Header field is unknown
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct H11UnknownField<'h>(pub &'h [u8]);
+
+/// Non-validated Header value that may be valid
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum H11MaybeValue<'h> {
+    /// That looks like Integer value
+    Integer(usize),
+    /// That looks like Bytes value
+    Bytes(&'h [u8]),
 }
-
-///
-#[derive(Debug)]
-#[cfg(any(feature = "std", feature = "alloc"))]
-pub struct H11PathHeap(Vec<u8>);
-
-///
-#[derive(Debug)]
-#[cfg(all(not(feature = "std"), not(feature = "alloc")))]
-pub struct H11PathStatic<const S: usize>(MaybeUninit<[u8; S]>);
-
-/*
-#[derive(Debug, Default)]
-pub struct H11Serving {
-    stage: H11ServingStage,
-    req_meta: Option<H11RequestMeta>,
-    payload_in_cursor: Option<PayloadCursor>,
-    payload_out_cursor: Option<PayloadCursor>,
-} */
