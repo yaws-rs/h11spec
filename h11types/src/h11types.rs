@@ -83,7 +83,6 @@ impl H11RequestMeta {
     }
 }
 
-
 /// Header field is unknown
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct H11UnknownField<'h>(pub &'h [u8]);

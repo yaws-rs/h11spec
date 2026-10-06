@@ -1,9 +1,7 @@
 //! Content-Length header
 
+use crate::parser::HeaderValueToken;
 use crate::HeaderValidationError;
-use crate::parser::{
-    HeaderValueToken
-};
 
 /*
 /// Header containing Content-Length value

@@ -1,6 +1,6 @@
 //! (auto generated from iana registry) h11Header Name tokens
 
-use logos::{Logos};
+use logos::Logos;
 
 #[derive(Debug, Logos, PartialEq)]
 #[allow(missing_docs)]
@@ -21,4 +21,3 @@ pub(crate) enum HeaderKeyToken<'raw> {
     #[regex(r"([A-Za-z0-9\-_]+):\s", |lex| lex.slice().strip_suffix(&[58, 32]).unwrap(), priority = 1)]
     Other(&'raw [u8]),
 }
-

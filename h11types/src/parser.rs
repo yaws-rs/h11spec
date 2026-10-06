@@ -1,10 +1,10 @@
 //! Parser components
 
+mod p_h11header;
 mod p_h11method;
 mod p_h11request_meta;
 mod p_h11target;
 mod p_h11version;
-mod p_h11header;
 
 mod p_generated;
 pub(crate) use p_generated::*;

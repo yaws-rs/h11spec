@@ -12,7 +12,6 @@ fn tc1_quoted_strings(#[context] ctx: Context, #[case] tc_input: &'static str) {
     do_header_test(ctx, tc_input);
 }
 
-
 /* TODO: maciejhirsz/logos/issues/568
 // Backslash quotes
 #[rstest]

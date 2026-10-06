@@ -2,7 +2,7 @@
 
 use crate::RespIndicative;
 
-use crate::{H11Version, H11Method};
+use crate::{H11Method, H11Version};
 
 /// Implement to receive URI Target
 pub trait TargetReceiver {

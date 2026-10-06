@@ -13,7 +13,9 @@ fn criterion_benchmark(c: &mut Criterion) {
         let mut meta = H11RequestMeta::default();
 
         b.iter(|| {
-            let _advanced = meta.advance_headers_kv_with(&mut NoReceiver, black_box(input_headers)).unwrap();
+            let _advanced = meta
+                .advance_headers_kv_with(&mut NoReceiver, black_box(input_headers))
+                .unwrap();
         })
     });
 
@@ -28,9 +30,8 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 
     c.bench_function("httparse equivalent parse_headers - three headers", |b| {
-
         b.iter(|| {
-            let mut headers = [httparse::EMPTY_HEADER; 30];            
+            let mut headers = [httparse::EMPTY_HEADER; 30];
             httparse::parse_headers(black_box(&input_headers), &mut headers).unwrap();
             let mut content_length = 0;
             for header in headers {
@@ -45,9 +46,8 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 
     c.bench_function("httparse equivalent parse_headers - nine headers", |b| {
-
         b.iter(|| {
-            let mut headers = [httparse::EMPTY_HEADER; 30];            
+            let mut headers = [httparse::EMPTY_HEADER; 30];
             httparse::parse_headers(black_box(&input_headers_fuller), &mut headers).unwrap();
             let mut content_length = 0;
             for header in headers {

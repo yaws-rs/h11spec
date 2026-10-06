@@ -24,10 +24,7 @@ pub enum H11Header<'h> {
     Unknown(H11UnknownField<'h>, H11MaybeValue<'h>),
 }
 
-use crate::parser::{
-    HeaderKeyToken,
-    HeaderValueToken
-};
+use crate::parser::{HeaderKeyToken, HeaderValueToken};
 
 use crate::HeaderValidationError;
 
@@ -42,7 +39,7 @@ impl<'h> TryFrom<(HeaderKeyToken<'h>, HeaderValueToken<'h>)> for H11Header<'h> {
             HeaderKeyToken::Host => Ok(H11Header::Host(tokens.1.try_into()?)),
             HeaderKeyToken::Connection => Ok(H11Header::Connection(tokens.1.try_into()?)),
             #[allow(unreachable_patterns)]
-            _ => todo!(),            
+            _ => todo!(),
         }
     }
 }

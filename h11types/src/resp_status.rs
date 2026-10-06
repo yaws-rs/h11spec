@@ -18,7 +18,7 @@ pub enum RespComplete<'uri, 'desc> {
     /// 3xx Series
     Resp3xx(Resp3xx<'uri>),
     /// 4xx Series
-    Resp4xx(Resp4xx),    
+    Resp4xx(Resp4xx),
 }
 
 /// Indicative response relative to Target / Host etc.
@@ -66,7 +66,7 @@ pub enum Resp3xx<'uri> {
     /// 302 - Found
     Found(Uri<'uri>),
     /// 303 - See Other
-    SeeOther(Uri<'uri>),    
+    SeeOther(Uri<'uri>),
     /// 307 - Temporary Redirect
     TempRedirecrt(Uri<'uri>),
     /// 308 - Permanent Redirect
@@ -99,4 +99,3 @@ pub enum Resp4xx {
     /// Other 4xx Response where the parameter is the xx part
     Other(u8),
 }
-

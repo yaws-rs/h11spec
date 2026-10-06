@@ -1,10 +1,8 @@
 //! Unknown header
 
-use crate::HeaderValidationError;
-use crate::parser::{
-    HeaderValueToken
-};
+use crate::parser::HeaderValueToken;
 use crate::H11Connection;
+use crate::HeaderValidationError;
 
 use logos::{Lexer, Logos};
 
@@ -16,8 +14,8 @@ pub(crate) enum TokenH11Connection {
     Close,
     #[regex(r"(?i:Keep-Alive)")]
     KeepAlive,
-//    #[regex(r"([A-Za-z0-9\-_]+):\s", |lex| lex.slice(), priority = 1)]
-//    Other(&'raw [u8]),
+    //    #[regex(r"([A-Za-z0-9\-_]+):\s", |lex| lex.slice(), priority = 1)]
+    //    Other(&'raw [u8]),
 }
 
 impl<'h> TryFrom<HeaderValueToken<'h>> for H11Connection {
@@ -35,6 +33,6 @@ impl<'h> TryFrom<HeaderValueToken<'h>> for H11Connection {
             Some(Ok(TokenH11Connection::Close)) => Ok(Self::Close),
             Some(Ok(TokenH11Connection::KeepAlive)) => Ok(Self::KeepAlive),
             _ => Err(HeaderValidationError::ExpectedConnection),
-        }        
+        }
     }
 }
