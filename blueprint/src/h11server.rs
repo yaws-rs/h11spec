@@ -4,6 +4,7 @@ use blueprint::BluePrint;
 use blueprint::Orbit;
 use blueprint::{Left, Right, InBuffer};
 use crate::H11Error;
+use h11types::HeaderStatus;
 
 /// empty for now
 pub struct Position;
@@ -106,7 +107,9 @@ impl Orbit for H11Serving {
                     println!("Headers in: ---{}===", core::str::from_utf8(left_in_b).unwrap());
                     
                     let advanced = match self.req_meta.advance_headers_with(&mut NoReceiver, &left_in_b) {
-                        Ok(b) => _ = left_in_b.split_off_mut(..b).unwrap(),
+                        Ok(HeaderStatus::Incomplete(b, _)) | Ok(HeaderStatus::Complete(b)) => {
+                            _ = left_in_b.split_off_mut(..b).unwrap()
+                        },
                         Err(e) => panic!("Headers advance error {:?}", e),
                     };
 

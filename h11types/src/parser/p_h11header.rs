@@ -151,6 +151,23 @@ mod test {
         format!("{}-{}", case_id, ctx.name)
     }
 
+    #[inline]
+    fn do_test(
+        tc_input: &'static str,
+    ) -> (Result<HeaderStatusStr<'static>, H11Error>, TestReceiver) {
+        let mut p = HeaderParser::default();
+        let mut r = TestReceiver::default();
+
+        let data = tc_input.as_bytes();
+        let res = p.parse(&mut r, &data);
+
+        let res_str = match res {
+            Err(e) => Err(e),
+            Ok(s) => Ok(s.into()),
+        };
+        (res_str, r)
+    }
+
     #[derive(Debug)]
     #[allow(dead_code)]
     struct InternalTc<'h> {
@@ -177,27 +194,17 @@ mod test {
     }
 
     #[rstest]
-    #[case("A: ffffoo.bar\r\nB: foo\r\n\r\n", true, 0)]
-    #[case("\r\n\r\n", true, 0)]
-    #[case("\r\n\r\nfoo", true, 3)]
+    #[case("A: ffffoo.bar\r\nB: foo\r\n\r\n", 0)]
+    #[case("\r\n\r\n", 0)]
+    #[case("\r\n\r\nfoo", 3)]
+    #[case("Host: test.rustcryp.to:8181\r\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:151.0) Gecko/20100101 Firefox/151.0\r\nAccept: image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate, br, zstd\r\nDNT: 1\r\nSec-GPC: 1\r\nConnection: keep-alive\r\nReferer: https://test.rustcryp.to:8181/\r\nSec-Fetch-Dest: image\r\nSec-Fetch-Mode: no-cors\r\nSec-Fetch-Site: same-origin\r\nPriority: u=6\r\nPragma: no-cache\r\nCache-Control: no-cache\r\n\r\n", 0)]
     fn headers_complete(
         #[context] ctx: Context,
         #[case] tc_input: &'static str,
-        #[case] expected_finish: bool,
         #[case] offset: usize,
     ) {
-        let mut p = HeaderParser::default();
-        let mut r = TestReceiver::default();
+        let (res_str, output) = do_test(tc_input);
 
-        let data = tc_input.as_bytes();
-        let res = p.parse(&mut r, &data);
-
-        let res_str: Result<HeaderStatusStr, H11Error> = match res {
-            Err(e) => Err(e),
-            Ok(s) => Ok(s.into()),
-        };
-
-        assert_eq!(r.finished, expected_finish);
         assert_eq!(
             res_str,
             Ok(HeaderStatusStr::Complete(tc_input.len() - offset))
@@ -207,7 +214,7 @@ mod test {
             ctx_insta(ctx),
             InternalTc {
                 input: tc_input,
-                output: r,
+                output,
                 res_str,
             }
         );
@@ -223,28 +230,18 @@ mod test {
         #[case] leftover: &'static str,
         #[case] incomplete_at: usize,
     ) {
-        let mut p = HeaderParser::default();
-        let mut r = TestReceiver::default();
-
-        let data = tc_input.as_bytes();
-        let res = p.parse(&mut r, &data);
-
-        let res_str: Result<HeaderStatusStr, H11Error> = match res {
-            Err(e) => Err(e),
-            Ok(s) => Ok(s.into()),
-        };
+        let (res_str, output) = do_test(tc_input);
 
         assert_eq!(
             res_str,
             Ok(HeaderStatusStr::Incomplete(incomplete_at, leftover))
         );
-        assert_eq!(r.finished, false);
 
         assert_debug_snapshot!(
             ctx_insta(ctx),
             InternalTc {
                 input: tc_input,
-                output: r,
+                output,
                 res_str,
             }
         );
