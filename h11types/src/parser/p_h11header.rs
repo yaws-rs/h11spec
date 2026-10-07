@@ -8,6 +8,15 @@ use crate::parser::{HeaderKeyToken, HeaderValueToken};
 
 use logos::{Lexer, Logos};
 
+/// Indicative completion status of header parsing
+#[derive(Debug, PartialEq)]
+pub enum HeaderStatus<'h> {
+    /// Completed at position relative to input
+    Complete(usize),
+    /// Incomplete from position relative to input
+    Incomplete(usize, &'h [u8]),
+}
+
 /// Standalone header parser
 #[derive(Debug, Default)]
 pub struct HeaderParser {
@@ -20,13 +29,16 @@ pub struct HeaderParser {
 }
 
 impl HeaderParser {
-    /// Parse data
+    /// Parse streamed chunk of data
+    #[must_use]
     pub fn parse<'raw, R: HeaderReceiver>(
         &mut self,
         r: &mut R,
         input: &'raw [u8],
-    ) -> Result<usize, H11Error> {
+    ) -> Result<HeaderStatus<'raw>, H11Error> {
         let mut lexer: Lexer<'raw, HeaderKeyToken<'raw>> = HeaderKeyToken::lexer(input);
+
+        let mut headers_complete = false;
 
         while let Some(hdr_key_token) = lexer.next() {
             self.fail_location_field = lexer.span().start;
@@ -35,18 +47,37 @@ impl HeaderParser {
                 Err(_e) => {
                     return Err(H11Error::InvalidHeaders(lexer.span().start));
                 }
+                Ok(HeaderKeyToken::Incomplete(s)) => {
+                    return Ok(HeaderStatus::Incomplete(lexer.span().start, s));
+                }
                 Ok(HeaderKeyToken::EmptyHeaders) if self.headers_seen == 0 => {
                     r.req_headers_finish();
+                    headers_complete = true;
                     break;
                 }
                 Ok(HeaderKeyToken::Complete) if self.headers_seen != 0 => {
                     r.req_headers_finish();
+                    headers_complete = true;
                     break;
                 }
                 Ok(field_token) => {
+                    let maybe_incomplete_at = lexer.span().start;
                     let mut v_lexer: Lexer<'raw, HeaderValueToken<'raw>> = lexer.morph();
 
+                    if v_lexer.remainder() == [] {
+                        return Ok(HeaderStatus::Incomplete(
+                            maybe_incomplete_at,
+                            &input[maybe_incomplete_at..],
+                        ));
+                    }
+
                     let hdr_v: H11Header<'raw> = match v_lexer.next() {
+                        Some(Ok(HeaderValueToken::Incomplete(_s))) => {
+                            return Ok(HeaderStatus::Incomplete(
+                                maybe_incomplete_at,
+                                &input[maybe_incomplete_at..],
+                            ));
+                        }
                         Some(Ok(value_token)) => {
                             (field_token, value_token).try_into().map_err(|e| {
                                 H11Error::InvalidHeaderValue(self.fail_location_value, e)
@@ -70,7 +101,11 @@ impl HeaderParser {
             r.req_header(hdr);
         }
 
-        Ok(lexer.span().end)
+        let st = match headers_complete {
+            true => HeaderStatus::Complete(lexer.span().end),
+            false => HeaderStatus::Incomplete(lexer.span().end, &input[lexer.span().end..]),
+        };
+        Ok(st)
     }
 }
 
@@ -118,9 +153,27 @@ mod test {
 
     #[derive(Debug)]
     #[allow(dead_code)]
-    struct InternalTc {
+    struct InternalTc<'h> {
         input: &'static str,
         output: TestReceiver,
+        res_str: Result<HeaderStatusStr<'h>, H11Error>,
+    }
+
+    #[derive(Debug, PartialEq)]
+    enum HeaderStatusStr<'h> {
+        Complete(usize),
+        Incomplete(usize, &'h str),
+    }
+
+    impl<'h> From<HeaderStatus<'h>> for HeaderStatusStr<'h> {
+        fn from(h: HeaderStatus<'h>) -> Self {
+            match h {
+                HeaderStatus::Complete(s) => Self::Complete(s),
+                HeaderStatus::Incomplete(s, b) => {
+                    Self::Incomplete(s, core::str::from_utf8(b).unwrap())
+                }
+            }
+        }
     }
 
     #[rstest]
@@ -139,14 +192,60 @@ mod test {
         let data = tc_input.as_bytes();
         let res = p.parse(&mut r, &data);
 
+        let res_str: Result<HeaderStatusStr, H11Error> = match res {
+            Err(e) => Err(e),
+            Ok(s) => Ok(s.into()),
+        };
+
         assert_eq!(r.finished, expected_finish);
-        assert_eq!(res, Ok(tc_input.len() - offset));
+        assert_eq!(
+            res_str,
+            Ok(HeaderStatusStr::Complete(tc_input.len() - offset))
+        );
 
         assert_debug_snapshot!(
             ctx_insta(ctx),
             InternalTc {
                 input: tc_input,
-                output: r
+                output: r,
+                res_str,
+            }
+        );
+    }
+
+    #[rstest]
+    #[case("A: ffffoo", "A: ffffoo", 0)]
+    #[case("A: foo\r\nB: ", "B: ", 8)]
+    #[case("C", "C", 0)]
+    fn headers_partial(
+        #[context] ctx: Context,
+        #[case] tc_input: &'static str,
+        #[case] leftover: &'static str,
+        #[case] incomplete_at: usize,
+    ) {
+        let mut p = HeaderParser::default();
+        let mut r = TestReceiver::default();
+
+        let data = tc_input.as_bytes();
+        let res = p.parse(&mut r, &data);
+
+        let res_str: Result<HeaderStatusStr, H11Error> = match res {
+            Err(e) => Err(e),
+            Ok(s) => Ok(s.into()),
+        };
+
+        assert_eq!(
+            res_str,
+            Ok(HeaderStatusStr::Incomplete(incomplete_at, leftover))
+        );
+        assert_eq!(r.finished, false);
+
+        assert_debug_snapshot!(
+            ctx_insta(ctx),
+            InternalTc {
+                input: tc_input,
+                output: r,
+                res_str,
             }
         );
     }

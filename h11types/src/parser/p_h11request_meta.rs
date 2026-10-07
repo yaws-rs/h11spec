@@ -105,6 +105,8 @@ where
     }
 }
 
+use crate::HeaderStatus;
+
 impl H11RequestMeta {
     /// Advance parsing the headers with the given input buffer.
     ///
@@ -116,20 +118,20 @@ impl H11RequestMeta {
         &mut self,
         r: &mut R,
         input: &'raw [u8],
-    ) -> Result<usize, H11Error> {
+    ) -> Result<HeaderStatus<'raw>, H11Error> {
         let mut relay = HeaderRelay {
             myself: self,
             relay_receiver: r,
             in_header_err: None,
         };
         let mut p = HeaderParser::default();
-        let p_count = p.parse(&mut relay, input)?;
+        let h_status = p.parse(&mut relay, input)?;
 
         if let Some(err) = relay.in_header_err {
             return Err(err);
         }
 
-        Ok(p_count)
+        Ok(h_status)
     }
 }
 
@@ -151,10 +153,10 @@ mod test {
 
     #[derive(Debug)]
     #[allow(unused)] // Debug is used through assert and compiler ignores this
-    pub(crate) struct HeaderTc {
+    pub(crate) struct HeaderTc<'h> {
         pub(crate) tc_input: &'static str,
         pub(crate) tester: HeaderTest,
-        pub(crate) res: Result<usize, H11Error>,
+        pub(crate) res: Result<HeaderStatus<'h>, H11Error>,
         pub(crate) meta: H11RequestMeta,
     }
 
