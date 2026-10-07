@@ -19,4 +19,4 @@ use p_h11version::*;
 //****************************************
 // Re-export public parser interface
 //****************************************
-pub use p_h11header::HeaderParser;
+pub use p_h11header::{HeaderParser, HeaderStatus};

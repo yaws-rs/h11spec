@@ -55,4 +55,6 @@ pub enum HeaderValidationError {
     ExpectedQuotedValue,
     /// Expected a valid Connection header value
     ExpectedConnection,
+    /// Internal validation error
+    Internal,
 }

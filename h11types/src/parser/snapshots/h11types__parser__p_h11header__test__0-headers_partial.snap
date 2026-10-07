@@ -3,14 +3,15 @@ source: h11types/src/parser/p_h11header.rs
 expression: "InternalTc { input: tc_input, output: r, res_str, }"
 ---
 InternalTc {
-    input: "\r\n\r\nfoo",
+    input: "A: ffffoo",
     output: TestReceiver {
         hdrs: [],
-        finished: true,
+        finished: false,
     },
     res_str: Ok(
-        Complete(
-            4,
+        Incomplete(
+            0,
+            "A: ffffoo",
         ),
     ),
 }

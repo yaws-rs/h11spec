@@ -17,6 +17,7 @@ impl<'h> TryFrom<HeaderValueToken<'h>> for H11MaybeValue<'h> {
 
     fn try_from(tok: HeaderValueToken<'h>) -> Result<Self, Self::Error> {
         match tok {
+            HeaderValueToken::Incomplete(i) => Err(HeaderValidationError::Internal),
             HeaderValueToken::Integer(i) => Ok(H11MaybeValue::Integer(i)),
             HeaderValueToken::MaybeValue(o) => Ok(H11MaybeValue::Bytes(o)),
             HeaderValueToken::MaybeQuotedValue(qv) => {

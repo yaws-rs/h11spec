@@ -13,7 +13,10 @@ HeaderTc {
         ],
     },
     res: Ok(
-        66,
+        Incomplete(
+            66,
+            [],
+        ),
     ),
     meta: H11RequestMeta {
         method: Unknown,

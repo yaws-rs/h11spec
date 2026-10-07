@@ -1,7 +1,0 @@
----
-source: h11types/src/parser/p_h11request_meta.rs
-expression: tester
----
-HeaderTest {
-    seen: [],
-}
