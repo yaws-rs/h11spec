@@ -113,7 +113,6 @@ impl HeaderParser {
 mod test {
 
     use super::*;
-    use crate::RespIndicative;
     use insta::assert_debug_snapshot;
     use rstest::rstest;
     use rstest::Context;
@@ -127,7 +126,7 @@ mod test {
     use crate::{H11MaybeValue, H11UnknownField};
 
     impl HeaderReceiver for TestReceiver {
-        fn req_header<'h, 'd>(&mut self, hdr: H11Header<'h>) -> RespIndicative<'d> {
+        fn req_header<'h>(&mut self, hdr: H11Header<'h>) -> () {
             let out = match hdr {
                 H11Header::Unknown(H11UnknownField(field), H11MaybeValue::Bytes(value)) => {
                     format!(
@@ -139,7 +138,6 @@ mod test {
                 _ => format!("Hd{:?}", hdr),
             };
             self.hdrs.push(out);
-            RespIndicative::GoAhead
         }
         fn req_headers_finish(&mut self) -> () {
             self.finished = true;
