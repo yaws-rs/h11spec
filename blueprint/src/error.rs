@@ -1,6 +1,3 @@
 //! h11spec Errors
 
-/// State machine errors
-#[derive(Debug)]
-pub enum H11Error {
-}
+pub use h11types::H11Error;
