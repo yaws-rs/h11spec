@@ -2,12 +2,12 @@
 
 This sans-io package is used by YAWS for HTTP/1.1 Implementation.
 
+![h11spec_composition](./assets/h11spec_composition.png)
+
 ## Crates
 
 | Crate       | Description                     |
 | :---        | :---                            |
-| h11_parse   | HTTP Request & Response Parser  |
-| h11_builder | HTTP Request & Response Builder |
 
 ### License
 
