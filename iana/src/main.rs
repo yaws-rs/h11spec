@@ -1,3 +1,4 @@
+#![allow(unused)]
 //! Generate required iana types
 
 use regex::Regex;
@@ -26,7 +27,7 @@ struct Field {
 }
 
 fn generate_field_names() {
-    let mut file = File::open("data/field-names-2025-11-28.csv").unwrap();
+    let file = File::open("data/field-names-2025-11-28.csv").unwrap();
 
     let mut out_tokens_file =
         File::create("../h11types/src/generated/h11header_name_tokens.rs").unwrap();
@@ -34,10 +35,10 @@ fn generate_field_names() {
     let mut out_impl_file = File::create("../h11types/src/generated/h11header_impl.rs").unwrap();
 
     let mut rdr = csv::Reader::from_reader(file);
-    out_tokens_file.write(b"//! (auto generated from iana registry) h11Header Name tokens\n\nuse logos::{Lexer, Logos};\n\n#[derive(Debug, Logos)]\n#[logos(source = [u8])]\npub(crate) enum HeaderKeyToken<'raw> {\n").unwrap();
-    out_name_file.write(b"//! (auto generated from iana registry) h11Header Name\n\n#[derive(Debug, PartialEq)]\npub enum HeaderKey {\n").unwrap();
+    out_tokens_file.write_all(b"//! (auto generated from iana registry) h11Header Name tokens\n\nuse logos::{Lexer, Logos};\n\n#[derive(Debug, Logos)]\n#[logos(source = [u8])]\npub(crate) enum HeaderKeyToken<'raw> {\n").unwrap();
+    out_name_file.write_all(b"//! (auto generated from iana registry) h11Header Name\n\n#[derive(Debug, PartialEq)]\npub enum HeaderKey {\n").unwrap();
 
-    out_impl_file.write(b"//! (auto generated from iana registry) h11header Token -> Name impl\n\nimpl TryFrom<HeaderKeyToken<'_>> for HeaderKey {\n    type Error = crate::H11Error;\n    fn try_from(i: HeaderKeyToken<'_>) -> Result<Self, Self::Error> {\n        match i {\n").unwrap();
+    out_impl_file.write_all(b"//! (auto generated from iana registry) h11header Token -> Name impl\n\nimpl TryFrom<HeaderKeyToken<'_>> for HeaderKey {\n    type Error = crate::H11Error;\n    fn try_from(i: HeaderKeyToken<'_>) -> Result<Self, Self::Error> {\n        match i {\n").unwrap();
 
     let enum_re_sanitizer = Regex::new(r"[^A-Za-z0-9]").unwrap();
 
@@ -49,15 +50,15 @@ fn generate_field_names() {
             continue;
         }
 
-        if enum_variant == "" {
+        if enum_variant.is_empty() {
             continue;
         }
 
-        out_tokens_file.write(format!("    #[regex(r\"(?i:{}):\\s*([^\\r\\n]*)\\r\\n\", crate::generated::util::header_value_u8)]\n    {}(&'raw [u8]),\n", field.field_name, enum_variant).as_bytes()).unwrap();
+        out_tokens_file.write_all(format!("    #[regex(r\"(?i:{}):\\s*([^\\r\\n]*)\\r\\n\", crate::generated::util::header_value_u8)]\n    {}(&'raw [u8]),\n", field.field_name, enum_variant).as_bytes()).unwrap();
         out_name_file
-            .write(format!("    {},\n", enum_variant).as_bytes())
+            .write_all(format!("    {},\n", enum_variant).as_bytes())
             .unwrap();
-        out_impl_file.write(
+        out_impl_file.write_all(
             format!(
                 "            HeaderKeyToken::{} => Ok(Self::{}),\n",
                 enum_variant, enum_variant
@@ -67,15 +68,15 @@ fn generate_field_names() {
     }
 
     out_tokens_file
-        .write(b"    #[allow(dead_code)]\n    Phantom(&'raw [u8]),\n")
+        .write_all(b"    #[allow(dead_code)]\n    Phantom(&'raw [u8]),\n")
         .unwrap();
     out_impl_file
-        .write(b"             _ => Err(H11Error::MissingHeaderKey),\n")
+        .write_all(b"             _ => Err(H11Error::MissingHeaderKey),\n")
         .unwrap();
 
-    out_name_file.write(b"}\n").unwrap();
-    out_tokens_file.write(b"}\n").unwrap();
-    out_impl_file.write(b"         }\n    }\n}\n").unwrap();
+    out_name_file.write_all(b"}\n").unwrap();
+    out_tokens_file.write_all(b"}\n").unwrap();
+    out_impl_file.write_all(b"         }\n    }\n}\n").unwrap();
     out_name_file.flush().unwrap();
     out_tokens_file.flush().unwrap();
     out_impl_file.flush().unwrap();
