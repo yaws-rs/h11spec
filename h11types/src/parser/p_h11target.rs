@@ -3,47 +3,33 @@
 use logos::{Lexer, Logos};
 
 use crate::H11Error;
+use super::ParseIndication;
 
 #[derive(Debug, Logos)]
 #[logos(utf8 = false)]
-//#[logos(source = [u8])]
 pub(crate) enum TargetToken<'raw> {
-    #[regex(r"[^\s\r]+", |lex| lex.slice(), priority = 200)]
+    #[regex(r"[^\n\s\r]+ ", |lex| lex.slice().trim_ascii_end().trim_ascii_start(), priority = 200)]
     MaybeTarget(&'raw [u8]),
-    #[token(r" ")]
-    TargetSep,
-    //    #[allow(dead_code)]
-    //    Phantom(&'raw [u8]),
+    #[regex(r"[^\n\s\r]+$", |lex| lex.slice(), priority = 100)]
+    #[allow(dead_code)]
+    MaybeIncomplete(&'raw [u8]),
 }
 
 pub(crate) fn parse_h11target<'raw>(
     lexer: &mut Lexer<'raw, TargetToken<'raw>>,
-) -> Result<&'raw [u8], H11Error> {
+) -> Result<ParseIndication<&'raw [u8]>, H11Error> {
     let mut ret: Option<&[u8]> = None;
-    let mut got_space = false;
-    while let Some(token) = lexer.next() {
-        if ret.is_none() {
-            let maybe_target = match token {
-                Ok(TargetToken::MaybeTarget(t)) => t,
-                _ => return Err(H11Error::InvalidTarget),
-            };
-            ret = Some(maybe_target);
-        } else {
-            match token {
-                Ok(TargetToken::TargetSep) => {
-                    got_space = true;
-                    break;
-                }
-                _ => return Err(H11Error::InvalidAfterTarget),
-            }
-        }
+    if let Some(token) = lexer.next() {
+        let maybe_target = match token {
+            Ok(TargetToken::MaybeTarget(t)) => t,
+            Ok(TargetToken::MaybeIncomplete(_)) => return Ok(ParseIndication::Incomplete),
+            Err(_) => return Err(H11Error::InvalidTarget),
+        };
+        ret = Some(maybe_target);
     }
     match ret {
-        None => Err(H11Error::ExpectedTarget),
-        Some(t) => match got_space {
-            true => Ok(t),
-            false => Err(H11Error::ExpectedSpAfterTarget),
-        },
+        None => Ok(ParseIndication::Incomplete),
+        Some(t) => Ok(ParseIndication::Completed(t)),
     }
 }
 
@@ -51,13 +37,20 @@ pub(crate) fn parse_h11target<'raw>(
 mod test {
     use super::*;
     use rstest::rstest;
-
+    use crate::ParseIndication;
+    
     #[rstest]
     #[case("/ ", 1)]
     #[case("/foo?bar=baz&nn=z#anchors ", 25)]
     fn parse_ok(#[case] input: &str, #[case] expected: usize) {
         let mut l = TargetToken::lexer(input.as_bytes());
-        let r = parse_h11target(&mut l).unwrap();
+        let r = match parse_h11target(&mut l).unwrap() {
+            ParseIndication::Completed(r) => r,
+            ParseIndication::Incomplete => {
+                panic!("Expected completion");
+            }
+        };
+
         assert_eq!(r.len(), expected);
     }
 
@@ -66,7 +59,8 @@ mod test {
         let input = "/";
         let mut l = TargetToken::lexer(input.as_bytes());
         let r = parse_h11target(&mut l);
-        assert_eq!(r, Err(H11Error::ExpectedSpAfterTarget));
+        assert_eq!(r, Ok(ParseIndication::Incomplete));
+        assert_eq!(l.span().start, 0);
     }
 
     #[test]
@@ -78,11 +72,11 @@ mod test {
     }
 
     #[test]
-    fn parse_err_expect_target() {
+    fn parse_ok_incomplete_expect_target() {
         let input = "";
         let mut l = TargetToken::lexer(input.as_bytes());
         let r = parse_h11target(&mut l);
-        assert_eq!(r, Err(H11Error::ExpectedTarget));
+        assert_eq!(r, Ok(ParseIndication::Incomplete));
     }
 
     #[test]
@@ -90,6 +84,6 @@ mod test {
         let input = "/\r";
         let mut l = TargetToken::lexer(input.as_bytes());
         let r = parse_h11target(&mut l);
-        assert_eq!(r, Err(H11Error::InvalidAfterTarget));
+        assert_eq!(r, Err(H11Error::InvalidTarget));
     }
 }

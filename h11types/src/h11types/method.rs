@@ -3,7 +3,7 @@
 use crate::H11Error;
 
 /// HTTP 1.1 Methods
-#[derive(Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub enum H11Method {
     /// Unknown type (created)
     #[default]

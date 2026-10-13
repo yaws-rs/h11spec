@@ -4,47 +4,36 @@ use logos::{Lexer, Logos};
 
 use crate::H11Error;
 use crate::H11Version;
+use super::ParseIndication;
 
 #[derive(Debug, Logos)]
 #[logos(utf8 = false)]
-//#[logos(source = [u8])]
-pub(crate) enum VersionToken<'raw> {
-    #[token("HTTP/1.1")]
+pub(crate) enum VersionToken {
+    #[token("HTTP/1.1\r\n", priority = 100)]
     Http11,
-    #[token("\r\n")]
-    StatusEnd,
-    #[allow(dead_code)]
-    Phantom(&'raw [u8]),
+    #[regex(r"H(T|TT|TTP|TTP/|TTP/1|TTP/1\.|TTP/1\.1|TTP/1\.1\r)$", priority = 50)]
+    Incomplete,
 }
 
 pub(crate) fn parse_h11version<'raw>(
-    lexer: &mut Lexer<'raw, VersionToken<'raw>>,
-) -> Result<H11Version, H11Error> {
+    lexer: &mut Lexer<'raw, VersionToken>,
+) -> Result<ParseIndication<H11Version>, H11Error> {
     let mut ret: Option<H11Version> = None;
-    let mut got_crlf = false;
-    while let Some(token) = lexer.next() {
-        if ret.is_none() {
-            let version = match token {
-                Ok(VersionToken::Http11) => H11Version::Http11,
-                _ => return Err(H11Error::InvalidVersion),
-            };
-            ret = Some(version);
-        } else {
-            match token {
-                Ok(VersionToken::StatusEnd) => {
-                    got_crlf = true;
-                    break;
-                }
-                _ => return Err(H11Error::InvalidAfterVersion),
-            }
-        }
+    if let Some(token) = lexer.next() {
+        let maybe_version = match token {
+            Ok(VersionToken::Http11) => H11Version::Http11,
+            Ok(VersionToken::Incomplete) => {
+                return Ok(ParseIndication::Incomplete);
+            },
+            Err(_) => {
+                return Err(H11Error::InvalidVersion);
+            },
+        };
+        ret = Some(maybe_version);
     }
     match ret {
-        None => Err(H11Error::ExpectedVersion),
-        Some(t) => match got_crlf {
-            true => Ok(t),
-            false => Err(H11Error::ExpectedCrLfAfterVersion),
-        },
+        None => Ok(ParseIndication::Incomplete),
+        Some(t) => Ok(ParseIndication::Completed(t)),
     }
 }
 
@@ -52,13 +41,14 @@ pub(crate) fn parse_h11version<'raw>(
 mod test {
     use super::*;
     use rstest::rstest;
-
+    use super::ParseIndication;
+    
     #[rstest]
     #[case("HTTP/1.1\r\n", 10)]
     fn parse_ok(#[case] input: &str, #[case] expected: usize) {
         let mut l = VersionToken::lexer(input.as_bytes());
         let r = parse_h11version(&mut l).unwrap();
-        assert_eq!(r, H11Version::Http11);
+        assert_eq!(r, ParseIndication::Completed(H11Version::Http11));
         assert_eq!(l.span().end, expected);
     }
 
@@ -67,7 +57,7 @@ mod test {
         let input = "HTTP/1.1";
         let mut l = VersionToken::lexer(input.as_bytes());
         let r = parse_h11version(&mut l);
-        assert_eq!(r, Err(H11Error::ExpectedCrLfAfterVersion));
+        assert_eq!(r, Ok(ParseIndication::Incomplete));
     }
 
     #[test]
@@ -83,7 +73,7 @@ mod test {
         let input = "";
         let mut l = VersionToken::lexer(input.as_bytes());
         let r = parse_h11version(&mut l);
-        assert_eq!(r, Err(H11Error::ExpectedVersion));
+        assert_eq!(r, Ok(ParseIndication::Incomplete));
     }
 
     #[test]
@@ -91,6 +81,6 @@ mod test {
         let input = "HTTP/1.1\r\r\n";
         let mut l = VersionToken::lexer(input.as_bytes());
         let r = parse_h11version(&mut l);
-        assert_eq!(r, Err(H11Error::InvalidAfterVersion));
+        assert_eq!(r, Err(H11Error::InvalidVersion));
     }
 }

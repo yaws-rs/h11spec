@@ -15,11 +15,11 @@ pub trait RequestReceiver {
     /// Provides request version
     fn req_version(&mut self, _version: H11Version) -> ();
     /// Indicates start of headers processing and completion of request line
-    fn req_start_headers<'d>(&mut self) -> RespIndicative<'d>;
+    fn req_start_headers(&mut self) -> RespIndicative;
     /// Indicates start of payload processing and completion of headers
-    fn req_start_payload<'d>(&mut self) -> RespIndicative<'d>;
+    fn req_start_payload(&mut self) -> RespIndicative;
     /// Indicates completion of entire request
-    fn req_complete<'d>(&mut self) -> RespIndicative<'d>;
+    fn req_complete(&mut self) -> RespIndicative;
 }
 
 /// Implement to receive URI Target
@@ -55,9 +55,9 @@ use crate::H11Header;
 /// Implement to reveive Request Headers
 pub trait RequestHeaderReceiver {
     /// Single Header
-    fn req_header<'h, 'd>(&mut self, hdr: H11Header<'h>) -> RespIndicative<'d>;
+    fn req_header<'h>(&mut self, hdr: H11Header<'h>) -> RespIndicative;
     /// Headers processing has finished
-    fn req_headers_finish<'d>(&mut self) -> RespIndicative<'d>;
+    fn req_headers_finish(&mut self) -> RespIndicative;
 }
 
 /// Implement to reveive Parsed Headers
@@ -71,7 +71,7 @@ pub trait HeaderReceiver {
 /// Implement to receive body
 pub trait RequestBodyReceiver {
     /// Receive a chunk of data
-    fn payload_chunk<'d>(&mut self, _chunk: &[u8]) -> RespIndicative<'d>;
+    fn payload_chunk(&mut self, _chunk: &[u8]) -> RespIndicative;
 }
 
 /// Marker to use when no header receiver is used
@@ -90,10 +90,10 @@ impl RequestTargetReceiver for &mut NoRequestReceiver {
 }
 
 impl RequestHeaderReceiver for NoRequestReceiver {
-    fn req_header<'h, 'd>(&mut self, _hdr: H11Header<'h>) -> RespIndicative<'d> {
+    fn req_header<'h>(&mut self, _hdr: H11Header<'h>) -> RespIndicative {
         RespIndicative::GoAhead
     }
-    fn req_headers_finish<'d>(&mut self) -> RespIndicative<'d> {
+    fn req_headers_finish(&mut self) -> RespIndicative {
         RespIndicative::GoAhead
     }
 }
@@ -105,13 +105,13 @@ impl RequestReceiver for NoRequestReceiver {
     fn req_version(&mut self, _version: H11Version) -> () {
         ()
     }
-    fn req_start_headers<'d>(&mut self) -> RespIndicative<'d> {
+    fn req_start_headers(&mut self) -> RespIndicative {
         RespIndicative::GoAhead
     }
-    fn req_start_payload<'d>(&mut self) -> RespIndicative<'d> {
+    fn req_start_payload(&mut self) -> RespIndicative {
         RespIndicative::GoAhead
     }
-    fn req_complete<'d>(&mut self) -> RespIndicative<'d> {
+    fn req_complete(&mut self) -> RespIndicative {
         RespIndicative::GoAhead
         //RespComplete::Resp2xx(Resp2xx::Ok(StatusDesc::ok()))
     }

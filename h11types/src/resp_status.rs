@@ -1,7 +1,5 @@
 //! H11Spec Response Status
 
-use crate::Uri;
-
 /// Authenticatiob Challenge
 #[derive(Clone, Debug, PartialEq)]
 pub enum AuthChallenge {
@@ -11,25 +9,41 @@ pub enum AuthChallenge {
     Digest,
 }
 
-/// Final response relative to Target / Host etc.
-pub enum RespComplete<'uri> {
+/// Final response status line relative to Target / Host etc.
+#[derive(Clone, Debug, PartialEq)]
+pub enum RespComplete {
     /// 2xx Series
     Resp2xx(Resp2xx),
     /// 3xx Series
-    Resp3xx(Resp3xx<'uri>),
+    Resp3xx(Resp3xx),
     /// 4xx Series
     Resp4xx(Resp4xx),
     /// 5xx Series
-    R5xx(Resp5xx),
+    Resp5xx(Resp5xx),
+    /// Other status with a code and a description.
+    UncheckedOther(&'static str),
+}
+
+impl RespComplete {
+    /// Response status line out as bytes excluding the trailing <CR><LF>
+    pub fn as_bytes_out(&self) -> &[u8] {
+        match self {
+            Self::Resp2xx(r) => r.as_bytes_out(),
+            Self::Resp3xx(r) => r.as_bytes_out(),
+            Self::Resp4xx(r) => r.as_bytes_out(),
+            Self::Resp5xx(r) => r.as_bytes_out(),
+            Self::UncheckedOther(o) => o.as_bytes(),
+        }
+    }
 }
 
 /// Indicative response relative to Target / Host etc.
 #[derive(Clone, Debug, PartialEq)]
-pub enum RespIndicative<'uri> {
+pub enum RespIndicative {
     /// Intermediate - Request is welcome without conditions
     GoAhead,
     /// 3xx Series
-    R3xx(Resp3xx<'uri>),
+    R3xx(Resp3xx),
     /// 4xx Series
     R4xx(Resp4xx),
     /// 5xx Series
@@ -53,6 +67,10 @@ impl StatusDesc {
     pub fn ok() -> Self {
         Self { inner: "Ok" }
     }
+    /// As bytes out
+    pub fn as_bytes_out(&self) -> &[u8] {
+        self.inner.as_bytes()
+    }
 }
 
 /// 1xx Rsponses
@@ -70,9 +88,10 @@ pub enum Resp1xx {
 
 /// 2xx Responses
 #[derive(Clone, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum Resp2xx {
     /// 200 - Ok
-    Ok(StatusDesc),
+    Ok,
     /// 201 Created
     Created,
     /// 202 Accepted
@@ -91,29 +110,58 @@ pub enum Resp2xx {
     AlreadyReported,
     /// 226 IM Used (RFC 3229)
     ImUsed,
-    /// Other 2xx status code with a description
-    Other(u8, &'static str),
+}
+
+impl Resp2xx {
+    /// Print response status line out as bytes excluding the <CR><LF>
+    pub fn as_bytes_out(&self) -> &[u8] {
+        match self {
+            Self::Ok => "200 OK",
+            Self::Created => "201 Created",
+            Self::Accepted => "202 Accepted",
+            Self::NonAuthoritativeInformation => "203 Non-Authoritative Information",
+            Self::NoContent => "204 No Content",
+            Self::ResetContent => "205 Reset Content",
+            Self::PartialContent => "206 Partial Content",
+            Self::MultiStatus => "207 Multi-Status",
+            Self::AlreadyReported => "208 Already Reported",
+            Self::ImUsed => "226 IM Used",
+        }.as_bytes()
+    }
 }
 
 /// 3xx Responses
 #[derive(Clone, Debug, PartialEq)]
-pub enum Resp3xx<'uri> {
+#[non_exhaustive]
+pub enum Resp3xx {
     /// 301 - Moved Permanently
-    MovedPermanently(Uri<'uri>),
+    MovedPermanently,
     /// 302 - Found
-    Found(Uri<'uri>),
+    Found,
     /// 303 - See Other
-    SeeOther(Uri<'uri>),
+    SeeOther,
     /// 307 - Temporary Redirect
-    TempRedirecrt(Uri<'uri>),
+    TempRedirect,
     /// 308 - Permanent Redirect
-    PermRedirect(Uri<'uri>),
-    /// Other 3xx status code with description
-    Other(u8, &'static str),
+    PermRedirect,
 }
 
+impl Resp3xx {
+    /// Print response status line out as bytes excluding the <CR><LF>
+    pub fn as_bytes_out(&self) -> &[u8] {
+        match self {
+            Self::MovedPermanently => "301 Moved Permanently",
+            Self::Found => "302 Found",
+            Self::SeeOther => "303 See Other",
+            Self::TempRedirect => "307 Temporary Redirect",
+            Self::PermRedirect => "308 Permanent Redirect",
+        }.as_bytes()
+    }
+}
+    
 /// 4xx Response
 #[derive(Clone, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum Resp4xx {
     /// 400 - Bad Request
     BadRequest,
@@ -133,8 +181,23 @@ pub enum Resp4xx {
     UnsupportedMediaType,
     /// 418 - I'm a teapot
     Teapot,
-    /// Other 4xx Response with the code and text description
-    Other(u8, &'static str),
+}
+
+impl Resp4xx {
+    /// Print response status line out as bytes excluding the <CR><LF>
+    pub fn as_bytes_out(&self) -> &[u8] {
+        match self {
+            Self::BadRequest => "400 Bad Request",
+            Self::AuthRequired(_) => "401 Authentication is required",
+            Self::PaymentRequired => "402 Payment required",
+            Self::Forbidden => "403 Forbidden",
+            Self::NotFound => "404 Not Found",
+            Self::MethodNotAllowed => "405 Method Not Allowed",
+            Self::NotAcceptable => "406 Not Acceptable",
+            Self::UnsupportedMediaType => "415 Unsupported Media Type",
+            Self::Teapot => "418 I'm a teapot",
+        }.as_bytes()
+    }
 }
 
 /// 5xx status indicates that the server is aware that it has encountered an error or
@@ -144,6 +207,7 @@ pub enum Resp4xx {
 /// user agents should display any included entity to the user. These response codes are
 /// applicable to any request method.
 #[derive(Clone, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum Resp5xx {
     /// ### 500 Internal Server Error
     ///
@@ -191,6 +255,24 @@ pub enum Resp5xx {
     ///
     /// The client needs to authenticate to gain network access.
     NetworkAuthenticationRequired,
-    /// Other 5xx Response with the code and text description
-    Other(u8, &'static str),
+}
+
+impl Resp5xx {
+    /// Print response status line out as bytes excluding the <CR><LF>
+    pub fn as_bytes_out(&self) -> &[u8] {
+        match self {
+            Self::InternalServerError => "500 Internal Server Error",
+            Self::NotImplemented => "501 Not Implemented",
+            Self::BadGateway => "502 Bad Gateway",
+            Self::ServiceUnavailable => "503 Service Unavailable",
+            Self::GatewayTimeout => "504 Gateway Timeout",
+            Self::HttpVersionNotSupported => "505 HTTP Version Not Supported",
+            Self::VariantAlsoNegotiates => "506 Variant Also Negotiates",
+            Self::InsufficientStorage => "507 Insufficient Storage",
+            Self::LoopDetected => "508 Loop Detected",
+            Self::BandwidthLimitExceeded => "509 Bandwidth Limit Exceeded",
+            Self::NotExtended => "510 Not Extended",
+            Self::NetworkAuthenticationRequired => "511 Network Authentication Required",
+        }.as_bytes()
+    }
 }

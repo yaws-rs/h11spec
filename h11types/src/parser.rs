@@ -16,6 +16,13 @@ use p_h11method::*;
 use p_h11target::*;
 use p_h11version::*;
 
+// Lexer & Value captive parser indicative result
+#[derive(Debug, PartialEq)]
+pub(crate) enum ParseIndication<T> {
+    Incomplete,
+    Completed(T),
+}
+
 //****************************************
 // Re-export public parser interface
 //****************************************

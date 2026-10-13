@@ -19,7 +19,7 @@ impl H11RequestMeta {
     #[inline]
     pub(crate) fn in_header<'h>(&mut self, hdr: H11Header<'h>) -> Result<(), H11Error> {
         let ret = match hdr {
-            H11Header::ContentLength(cl) => self.in_content_length(cl.into())?,
+            H11Header::ContentLength(cl) => self.in_content_length(cl.try_into()?)?,
             _ => {}
         };
         Ok(ret)

@@ -1,5 +1,7 @@
 //! utility fns for genereated bits
 
+// TODO: do we need this? we try to keep parsed as bytes as-is for no-alloc reasons
+/*
 use logos::Lexer;
 
 use crate::parser::HeaderValueToken;
@@ -32,3 +34,4 @@ pub(crate) fn header_value_usize<'raw>(
         Err(_) => None,
     }
 }
+*/
