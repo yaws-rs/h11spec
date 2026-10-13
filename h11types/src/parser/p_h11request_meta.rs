@@ -51,7 +51,7 @@ impl H11RequestMeta {
         if self.method == H11Method::Unknown {
             try_method = match parse_h11method(&mut lexer) {
                 Ok(ParseIndication::Incomplete) => {
-                    return Ok(StartLineStatus::Incomplete(0, &input));
+                    return Ok(StartLineStatus::Incomplete(0, input));
                 }
                 Ok(ParseIndication::Completed(mthd)) => mthd,
                 Err(e) => return Err(e),
@@ -65,7 +65,7 @@ impl H11RequestMeta {
             let mut target_lexer: Lexer<'raw, TargetToken<'raw>> = lexer.morph();
             let _target = match parse_h11target(&mut target_lexer) {
                 Ok(ParseIndication::Incomplete) => {
-                    return Ok(StartLineStatus::Incomplete(0, &input));
+                    return Ok(StartLineStatus::Incomplete(0, input));
                 }
                 Ok(ParseIndication::Completed(target)) => target,
                 Err(e) => return Err(e),
@@ -79,7 +79,7 @@ impl H11RequestMeta {
             let mut version_lexer: Lexer<'_, VersionToken> = lexer.morph();
             try_version = match parse_h11version(&mut version_lexer) {
                 Ok(ParseIndication::Incomplete) => {
-                    return Ok(StartLineStatus::Incomplete(0, &input));
+                    return Ok(StartLineStatus::Incomplete(0, input));
                 }
                 Ok(ParseIndication::Completed(version)) => version,
                 Err(e) => return Err(e),
@@ -96,8 +96,8 @@ impl H11RequestMeta {
             if let Some((loc_start, loc_end)) = self.target_loc {
                 let mut i_target = r.impl_target();
                 let target_loc_data = &input[loc_start..loc_end];
-                let _ = i_target.req_target_init(target_loc_data);
-                let _ = i_target.req_target_finish();
+                i_target.req_target_init(target_loc_data);
+                i_target.req_target_finish();
             }
         }
 
@@ -129,7 +129,7 @@ where
             }
         }
     }
-    fn req_headers_finish(&mut self) -> () {
+    fn req_headers_finish(&mut self) {
         self.myself.headers_end = Some(0);
         self.relay_receiver.req_headers_finish();
         //RespIndicative::GoAhead

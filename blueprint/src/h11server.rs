@@ -111,16 +111,16 @@ where
         loop {
             match self.stage {
                 H11ServingStage::Start => {
-                    let advanced =
-                        match self.req_meta.advance_status_with(&mut self.app, &left_in_b) {
-                            Ok(StartLineStatus::Complete(advanced)) => advanced,
-                            Ok(StartLineStatus::Incomplete(_, _)) => {
-                                break;
-                            }
-                            Err(e) => return Err(e),
-                        };
+                    let advanced = match self.req_meta.advance_status_with(&mut self.app, left_in_b)
+                    {
+                        Ok(StartLineStatus::Complete(advanced)) => advanced,
+                        Ok(StartLineStatus::Incomplete(_, _)) => {
+                            break;
+                        }
+                        Err(e) => return Err(e),
+                    };
 
-                    left_in_b.split_off_mut(..advanced).unwrap();
+                    let _ = left_in_b.split_off_mut(..advanced);
                     discard += advanced;
 
                     if self.req_meta.status_complete() {
@@ -130,13 +130,10 @@ where
                     }
                 }
                 H11ServingStage::Headers => {
-                    match self
-                        .req_meta
-                        .advance_headers_with(&mut self.app, &left_in_b)
-                    {
+                    match self.req_meta.advance_headers_with(&mut self.app, left_in_b) {
                         Ok(HeaderStatus::Incomplete(b, _)) | Ok(HeaderStatus::Complete(b)) => {
                             discard += b;
-                            _ = left_in_b.split_off_mut(..b).unwrap()
+                            _ = left_in_b.split_off_mut(..b);
                         }
                         Err(e) => panic!("Headers advance error {:?}", e),
                     };
@@ -177,8 +174,8 @@ where
                     ) -> FillAttempt {
                         let mut combined_len: usize = 0;
 
-                        for x in 0..try_adds.len() {
-                            let try_add_len = try_adds[x].len();
+                        for try_add in try_adds {
+                            let try_add_len = try_add.len();
                             let (adds, overflows) = combined_len.overflowing_add(try_add_len);
                             if overflows {
                                 return FillAttempt::Overflow;
@@ -192,13 +189,12 @@ where
 
                         let mut offset = 0;
 
-                        for x in 0..try_adds.len() {
-                            let out_bytes = try_adds[x];
-                            let end_pos = offset + try_adds[x].len();
-                            left_out_b[offset..end_pos].copy_from_slice(out_bytes);
-                            offset += out_bytes.len();
+                        for try_add in try_adds {
+                            let end_pos = offset + try_add.len();
+                            left_out_b[offset..end_pos].copy_from_slice(try_add);
+                            offset += try_add.len();
                         }
-                        return FillAttempt::Complete(offset);
+                        FillAttempt::Complete(offset)
                     }
 
                     #[inline]
@@ -238,9 +234,9 @@ where
                     if let StatusOut::HeadersSent(ref mut sent) = self.status_out {
                         let resp_headers = self.app.resp_on_headers(*sent);
 
-                        for x in 0..resp_headers.len() {
+                        for resp_header in resp_headers {
                             let (out_header_field_b, out_header_value_b) =
-                                resp_headers[x].as_bytes_out();
+                                resp_header.as_bytes_out();
 
                             let remaining = borrow_remaining_left_b(left_out_b, out_pos, 22);
 
@@ -306,7 +302,7 @@ where
 
                         if remaining_len > 0 {
                             let resp_body = self.app.resp_on_body(remaining_len);
-                            if resp_body.len() > 0 {
+                            if !resp_body.is_empty() {
                                 let filled = match try_fill_left_with(buf_remaining, &[resp_body]) {
                                     FillAttempt::Complete(filled) => filled,
                                     FillAttempt::Overflow => break,

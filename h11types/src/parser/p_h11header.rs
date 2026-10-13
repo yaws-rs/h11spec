@@ -30,7 +30,6 @@ pub struct HeaderParser {
 
 impl HeaderParser {
     /// Parse streamed chunk of data
-    #[must_use]
     pub fn parse<'raw, R: HeaderReceiver>(
         &mut self,
         r: &mut R,
@@ -64,7 +63,7 @@ impl HeaderParser {
                     let maybe_incomplete_at = lexer.span().start;
                     let mut v_lexer: Lexer<'raw, HeaderValueToken<'raw>> = lexer.morph();
 
-                    if v_lexer.remainder() == [] {
+                    if v_lexer.remainder().is_empty() {
                         return Ok(HeaderStatus::Incomplete(
                             maybe_incomplete_at,
                             &input[maybe_incomplete_at..],

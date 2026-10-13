@@ -39,7 +39,7 @@ use super::ParseIndication;
 pub(crate) fn parse_h11method<'raw>(
     lexer: &mut Lexer<'raw, MethodToken<'raw>>,
 ) -> Result<ParseIndication<H11Method>, H11Error> {
-    if lexer.remainder().len() == 0 {
+    if lexer.remainder().is_empty() {
         return Ok(ParseIndication::Incomplete);
     }
     let mut ret: Option<H11Method> = None;

@@ -9,17 +9,17 @@ mod method;
 use core::num::NonZero;
 pub use method::*;
 
-///
+/// HTTP Transfer-Encoding
 #[derive(Debug, Default, PartialEq)]
 pub enum H11TransferEncoding {
-    ///
+    /// None
     #[default]
     None,
     /// Chunked encoding
     Chunked,
 }
 
-///
+/// HTTP Version
 #[derive(Debug, Default, PartialEq)]
 pub enum H11Version {
     /// Unknown version
@@ -53,7 +53,7 @@ impl H11Connection {
 /// HTTP Compression scheme
 #[derive(Debug, Default, PartialEq)]
 pub enum H11TransferCompression {
-    ///
+    /// None
     #[default]
     None,
     /// Compress
@@ -83,10 +83,7 @@ impl RequestBodySize {
     /// Is the request body empty?
     #[inline]
     pub const fn is_empty(&self) -> bool {
-        match self {
-            RequestBodySize::Empty => true,
-            _ => false,
-        }
+        matches!(self, RequestBodySize::Empty)
     }
 }
 
@@ -120,7 +117,7 @@ impl H11RequestMeta {
         match self.body_length {
             Some(s) => match s {
                 0 => RequestBodySize::Empty,
-                _ => RequestBodySize::Fixed(NonZero::new(s).unwrap()),
+                _ => RequestBodySize::Fixed(NonZero::new(s).expect("Bug")),
             },
             None => RequestBodySize::Empty,
         }

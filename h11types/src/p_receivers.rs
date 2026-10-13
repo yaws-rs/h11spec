@@ -9,11 +9,11 @@ use crate::{H11Method, H11Version};
 /// Implement to receive parsed request
 pub trait RequestReceiver {
     /// Provides request method
-    fn req_method(&mut self, _mthd: H11Method) -> ();
+    fn req_method(&mut self, _mthd: H11Method);
     /// Provide target receiver
     fn impl_target(&mut self) -> impl RequestTargetReceiver;
     /// Provides request version
-    fn req_version(&mut self, _version: H11Version) -> ();
+    fn req_version(&mut self, _version: H11Version);
     /// Indicates start of headers processing and completion of request line
     fn req_start_headers(&mut self) -> RespIndicative;
     /// Indicates start of payload processing and completion of headers
@@ -25,11 +25,11 @@ pub trait RequestReceiver {
 /// Implement to receive URI Target
 pub trait RequestTargetReceiver {
     /// Start streaming an URI
-    fn req_target_init(&mut self, _target_part: &[u8]) -> ();
+    fn req_target_init(&mut self, _target_part: &[u8]);
     /// Add to started URI
-    fn req_target_add(&mut self, _target_part: &[u8]) -> ();
+    fn req_target_add(&mut self, _target_part: &[u8]);
     /// Finish URI
-    fn req_target_finish(&mut self) -> ();
+    fn req_target_finish(&mut self);
 }
 
 /// Use to ignore request Target
@@ -37,17 +37,11 @@ pub struct NoRequestTargetReceiver;
 
 impl RequestTargetReceiver for NoRequestTargetReceiver {
     #[inline]
-    fn req_target_init(&mut self, _target_part: &[u8]) -> () {
-        ()
-    }
+    fn req_target_init(&mut self, _target_part: &[u8]) {}
     #[inline]
-    fn req_target_add(&mut self, _target_part: &[u8]) -> () {
-        ()
-    }
+    fn req_target_add(&mut self, _target_part: &[u8]) {}
     #[inline]
-    fn req_target_finish(&mut self) -> () {
-        ()
-    }
+    fn req_target_finish(&mut self) {}
 }
 
 use crate::H11Header;
@@ -63,9 +57,9 @@ pub trait RequestHeaderReceiver {
 /// Implement to reveive Parsed Headers
 pub trait HeaderReceiver {
     /// Single Header
-    fn req_header<'h>(&mut self, hdr: H11Header<'h>) -> ();
+    fn req_header<'h>(&mut self, hdr: H11Header<'h>);
     /// Headers processing has finished
-    fn req_headers_finish(&mut self) -> ();
+    fn req_headers_finish(&mut self);
 }
 
 /// Implement to receive body
@@ -78,15 +72,9 @@ pub trait RequestBodyReceiver {
 pub struct NoRequestReceiver;
 
 impl RequestTargetReceiver for &mut NoRequestReceiver {
-    fn req_target_init(&mut self, _target_part: &[u8]) -> () {
-        ()
-    }
-    fn req_target_add(&mut self, _target_part: &[u8]) -> () {
-        ()
-    }
-    fn req_target_finish(&mut self) -> () {
-        ()
-    }
+    fn req_target_init(&mut self, _target_part: &[u8]) {}
+    fn req_target_add(&mut self, _target_part: &[u8]) {}
+    fn req_target_finish(&mut self) {}
 }
 
 impl RequestHeaderReceiver for NoRequestReceiver {
@@ -99,12 +87,8 @@ impl RequestHeaderReceiver for NoRequestReceiver {
 }
 
 impl RequestReceiver for NoRequestReceiver {
-    fn req_method(&mut self, _mthd: H11Method) -> () {
-        ()
-    }
-    fn req_version(&mut self, _version: H11Version) -> () {
-        ()
-    }
+    fn req_method(&mut self, _mthd: H11Method) {}
+    fn req_version(&mut self, _version: H11Version) {}
     fn req_start_headers(&mut self) -> RespIndicative {
         RespIndicative::GoAhead
     }
