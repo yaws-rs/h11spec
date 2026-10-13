@@ -19,11 +19,6 @@ jobs:
   build-nostds:
     name: Build on no_std target (thumbv7em-none-eabi)
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - crate: blueprint-h11spec
-          - crate: h11types
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
@@ -32,8 +27,10 @@ jobs:
           targets: thumbv7em-none-eabi
       - uses: taiki-e/install-action@cargo-hack
       # No default features build
-      - name: no_std 
-        run: cargo build -p ${{ matrix.crate }} --target thumbv7em-none-eabi --release --no-default-features --features server
+      - name: no_std h11types
+        run: cargo build -p h11types --target thumbv7em-none-eabi --release
+      - name: no_std blueprint-h11spec
+        run: cargo build -p blueprint-h11spec --target thumbv7em-none-eabi --release --features h11server
 
   check-test-all:
     name: test, fmt, clippy
