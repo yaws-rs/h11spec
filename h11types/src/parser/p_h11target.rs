@@ -2,8 +2,8 @@
 
 use logos::{Lexer, Logos};
 
-use crate::H11Error;
 use super::ParseIndication;
+use crate::H11Error;
 
 #[derive(Debug, Logos)]
 #[logos(utf8 = false)]
@@ -36,9 +36,9 @@ pub(crate) fn parse_h11target<'raw>(
 #[cfg(test)]
 mod test {
     use super::*;
-    use rstest::rstest;
     use crate::ParseIndication;
-    
+    use rstest::rstest;
+
     #[rstest]
     #[case("/ ", 1)]
     #[case("/foo?bar=baz&nn=z#anchors ", 25)]

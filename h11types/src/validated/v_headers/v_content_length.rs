@@ -24,7 +24,7 @@ impl TryFrom<HeaderValueToken<'_>> for usize {
                     Ok(s) => Ok(s),
                     Err(_) => Err(HeaderValidationError::ExpectedInteger),
                 }
-            },
+            }
             _ => Err(HeaderValidationError::ExpectedInteger),
         }
     }

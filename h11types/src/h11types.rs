@@ -6,8 +6,8 @@
 /// Registry at https://www.iana.org/assignments/http-parameters
 ///
 mod method;
-pub use method::*;
 use core::num::NonZero;
+pub use method::*;
 
 ///
 #[derive(Debug, Default, PartialEq)]
@@ -45,7 +45,8 @@ impl H11Connection {
         match self {
             Self::Close => "Close",
             Self::KeepAlive => "Keep-Alive",
-        }.as_bytes()
+        }
+        .as_bytes()
     }
 }
 
@@ -119,7 +120,7 @@ impl H11RequestMeta {
         match self.body_length {
             Some(s) => match s {
                 0 => RequestBodySize::Empty,
-                _ => RequestBodySize::Fixed(NonZero::new(s).unwrap())
+                _ => RequestBodySize::Fixed(NonZero::new(s).unwrap()),
             },
             None => RequestBodySize::Empty,
         }
@@ -184,15 +185,23 @@ impl<'h> TryFrom<H11MaybeValue<'h>> for usize {
             H11MaybeValue::Integer(i) => {
                 let s = match core::str::from_utf8(i) {
                     Ok(s) => s,
-                    Err(_) => return Err(H11Error::InvalidHeaderValueNoPos(HeaderValidationError::ExpectedInteger)),
-		        };
+                    Err(_) => {
+                        return Err(H11Error::InvalidHeaderValueNoPos(
+                            HeaderValidationError::ExpectedInteger,
+                        ))
+                    }
+                };
                 use core::str::FromStr;
                 match usize::from_str(s) {
                     Ok(s) => Ok(s),
-                    Err(_) => Err(H11Error::InvalidHeaderValueNoPos(HeaderValidationError::ExpectedInteger)),
-		        }
-            },
-            _ => Err(H11Error::InvalidHeaderValueNoPos(HeaderValidationError::ExpectedInteger)),
+                    Err(_) => Err(H11Error::InvalidHeaderValueNoPos(
+                        HeaderValidationError::ExpectedInteger,
+                    )),
+                }
+            }
+            _ => Err(H11Error::InvalidHeaderValueNoPos(
+                HeaderValidationError::ExpectedInteger,
+            )),
         }
     }
 }

@@ -2,9 +2,9 @@
 
 use logos::{Lexer, Logos};
 
+use super::ParseIndication;
 use crate::H11Error;
 use crate::H11Version;
-use super::ParseIndication;
 
 #[derive(Debug, Logos)]
 #[logos(utf8 = false)]
@@ -24,10 +24,10 @@ pub(crate) fn parse_h11version<'raw>(
             Ok(VersionToken::Http11) => H11Version::Http11,
             Ok(VersionToken::Incomplete) => {
                 return Ok(ParseIndication::Incomplete);
-            },
+            }
             Err(_) => {
                 return Err(H11Error::InvalidVersion);
-            },
+            }
         };
         ret = Some(maybe_version);
     }
@@ -39,10 +39,10 @@ pub(crate) fn parse_h11version<'raw>(
 
 #[cfg(test)]
 mod test {
+    use super::ParseIndication;
     use super::*;
     use rstest::rstest;
-    use super::ParseIndication;
-    
+
     #[rstest]
     #[case("HTTP/1.1\r\n", 10)]
     fn parse_ok(#[case] input: &str, #[case] expected: usize) {

@@ -26,5 +26,5 @@ pub(crate) enum ParseIndication<T> {
 //****************************************
 // Re-export public parser interface
 //****************************************
-pub use p_h11request_meta::{StartLineStatus};
 pub use p_h11header::{HeaderParser, HeaderStatus};
+pub use p_h11request_meta::StartLineStatus;

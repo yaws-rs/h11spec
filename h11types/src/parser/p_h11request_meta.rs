@@ -32,7 +32,6 @@ pub enum StartLineStatus<'h> {
     Incomplete(usize, &'h [u8]),
 }
 
-
 use crate::ParseIndication;
 
 impl H11RequestMeta {
@@ -53,7 +52,7 @@ impl H11RequestMeta {
             try_method = match parse_h11method(&mut lexer) {
                 Ok(ParseIndication::Incomplete) => {
                     return Ok(StartLineStatus::Incomplete(0, &input));
-                },
+                }
                 Ok(ParseIndication::Completed(mthd)) => mthd,
                 Err(e) => return Err(e),
             };
@@ -67,11 +66,11 @@ impl H11RequestMeta {
             let _target = match parse_h11target(&mut target_lexer) {
                 Ok(ParseIndication::Incomplete) => {
                     return Ok(StartLineStatus::Incomplete(0, &input));
-                },
+                }
                 Ok(ParseIndication::Completed(target)) => target,
-                Err(e) => return Err(e),                
+                Err(e) => return Err(e),
             };
-            try_target = Some((start, target_lexer.span().start));            
+            try_target = Some((start, target_lexer.span().start));
             lexer = target_lexer.morph();
             loc_parsed = true;
         }
@@ -81,9 +80,9 @@ impl H11RequestMeta {
             try_version = match parse_h11version(&mut version_lexer) {
                 Ok(ParseIndication::Incomplete) => {
                     return Ok(StartLineStatus::Incomplete(0, &input));
-                },
+                }
                 Ok(ParseIndication::Completed(version)) => version,
-                Err(e) => return Err(e),                                
+                Err(e) => return Err(e),
             };
             lexer = version_lexer.morph();
         }
@@ -229,7 +228,7 @@ mod test {
     }
 
     use super::StartLineStatus;
-    
+
     #[rstest]
     #[case("GET / HTTP/1.1\r\n", 16)]
     #[case("GET /foo=bar?ding=dong&ping=baa+baa#anchor HTTP/1.1\r\n", 53)]
@@ -258,15 +257,15 @@ mod test {
         "GET / HTTP/1.1\r",
         Ok(StartLineStatus::Incomplete(0, b"GET / HTTP/1.1\r"))
     )]
-    #[case(
-        "GET / ",
-        Ok(StartLineStatus::Incomplete(0, b"GET / "))
-    )]
+    #[case("GET / ", Ok(StartLineStatus::Incomplete(0, b"GET / ")))]
     #[case(
         "GET /foo=bar?ding=dong&ping=baa+baa#anchor",
-        Ok(StartLineStatus::Incomplete(0, b"GET /foo=bar?ding=dong&ping=baa+baa#anchor")),
+        Ok(StartLineStatus::Incomplete(0, b"GET /foo=bar?ding=dong&ping=baa+baa#anchor"))
     )]
-    fn try_advance_status_incomplete<'h>(#[case] raw_in: &'h str, #[case] expected_res: Result<StartLineStatus<'h>, H11Error>) {
+    fn try_advance_status_incomplete<'h>(
+        #[case] raw_in: &'h str,
+        #[case] expected_res: Result<StartLineStatus<'h>, H11Error>,
+    ) {
         let mut meta = H11RequestMeta::default();
 
         let res = meta.advance_status_with(&mut NoRequestReceiver, raw_in.as_bytes());

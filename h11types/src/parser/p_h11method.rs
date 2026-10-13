@@ -57,7 +57,7 @@ pub(crate) fn parse_h11method<'raw>(
             Ok(MethodToken::Trace) => H11Method::Trace,
             Ok(MethodToken::Incomplete) => {
                 return Ok(ParseIndication::Incomplete);
-            },
+            }
             _ => return Err(H11Error::InvalidMethod),
         };
         ret = Some(maybe_method);
@@ -71,9 +71,9 @@ pub(crate) fn parse_h11method<'raw>(
 #[cfg(test)]
 mod test {
     use super::*;
-    use rstest::rstest;
     use crate::ParseIndication;
-    
+    use rstest::rstest;
+
     #[rstest]
     #[case("CONNECT ", H11Method::Connect)]
     #[case("DELETE ", H11Method::Delete)]

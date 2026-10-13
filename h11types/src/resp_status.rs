@@ -126,7 +126,8 @@ impl Resp2xx {
             Self::MultiStatus => "207 Multi-Status",
             Self::AlreadyReported => "208 Already Reported",
             Self::ImUsed => "226 IM Used",
-        }.as_bytes()
+        }
+        .as_bytes()
     }
 }
 
@@ -155,10 +156,11 @@ impl Resp3xx {
             Self::SeeOther => "303 See Other",
             Self::TempRedirect => "307 Temporary Redirect",
             Self::PermRedirect => "308 Permanent Redirect",
-        }.as_bytes()
+        }
+        .as_bytes()
     }
 }
-    
+
 /// 4xx Response
 #[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
@@ -196,7 +198,8 @@ impl Resp4xx {
             Self::NotAcceptable => "406 Not Acceptable",
             Self::UnsupportedMediaType => "415 Unsupported Media Type",
             Self::Teapot => "418 I'm a teapot",
-        }.as_bytes()
+        }
+        .as_bytes()
     }
 }
 
@@ -273,6 +276,7 @@ impl Resp5xx {
             Self::BandwidthLimitExceeded => "509 Bandwidth Limit Exceeded",
             Self::NotExtended => "510 Not Extended",
             Self::NetworkAuthenticationRequired => "511 Network Authentication Required",
-        }.as_bytes()
+        }
+        .as_bytes()
     }
 }
