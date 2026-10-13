@@ -13,7 +13,7 @@ categories = ["science"]
 [dependencies]
 #logos = { version = "0.14", default-features = false, features = ["export_derive"] }
 logos = { version = "0.16", default-features = false, features = ["export_derive"] }
-yuri = { version = "0.1" }
+yuri = { version = "0.1", default-features = false, features = ["parser", "builder"] }
 # maciejhirsz/logos/issues/568
 #quoted-values = { version = "0.1", features = ["decode"] }
 
