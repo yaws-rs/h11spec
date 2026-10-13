@@ -6,10 +6,10 @@ HeaderTc {
     tc_input: "Content-length: 200\r\nSet-Cookie: 3\r\nSet-Cookie: 2\r\nSet-Cookie: 1\r\n",
     tester: HeaderTest {
         seen: [
-            "ContentLength(200)",
-            "SetCookie(Integer(3))",
-            "SetCookie(Integer(2))",
-            "SetCookie(Integer(1))",
+            "ContentLength(Integer([50, 48, 48]))",
+            "SetCookie(Integer([51]))",
+            "SetCookie(Integer([50]))",
+            "SetCookie(Integer([49]))",
         ],
     },
     res: Ok(

@@ -7,77 +7,71 @@ use crate::H11Method;
 
 #[derive(Debug, Logos)]
 #[logos(utf8 = false)]
-//#[logos(source = [u8])]
 pub(crate) enum MethodToken<'raw> {
-    #[token("CONNECT")]
+    #[token("CONNECT ", priority = 100)]
     Connect,
-    #[token("DELETE")]
+    #[token("DELETE ", priority = 100)]
     Delete,
-    #[token("GET")]
+    #[token("GET ", priority = 100)]
     Get,
-    #[token("HEAD")]
+    #[token("HEAD ", priority = 100)]
     Head,
-    #[token("OPTIONS")]
+    #[token("OPTIONS ", priority = 100)]
     Options,
-    #[token("PATCH")]
+    #[token("PATCH ", priority = 100)]
     Patch,
-    #[token("POST")]
+    #[token("POST ", priority = 100)]
     Post,
-    #[token("PUT")]
+    #[token("PUT ", priority = 100)]
     Put,
-    #[token("QUERY")]
+    #[token("QUERY ", priority = 100)]
     Query,
-    #[token("TRACE")]
+    #[token("TRACE ", priority = 100)]
     Trace,
-    #[token(r" ")]
-    MethodSep,
+    #[regex("[A-Z0-9]{1, 12}$", priority = 1)]
+    Incomplete,
     #[allow(dead_code)]
     Phantom(&'raw [u8]),
 }
 
+use super::ParseIndication;
+
 pub(crate) fn parse_h11method<'raw>(
     lexer: &mut Lexer<'raw, MethodToken<'raw>>,
-) -> Result<H11Method, H11Error> {
+) -> Result<ParseIndication<H11Method>, H11Error> {
+    if lexer.remainder().is_empty() {
+        return Ok(ParseIndication::Incomplete);
+    }
     let mut ret: Option<H11Method> = None;
-    let mut got_space = false;
-    while let Some(token) = lexer.next() {
-        if ret.is_none() {
-            let maybe_method = match token {
-                Ok(MethodToken::Connect) => H11Method::Connect,
-                Ok(MethodToken::Delete) => H11Method::Delete,
-                Ok(MethodToken::Get) => H11Method::Get,
-                Ok(MethodToken::Head) => H11Method::Head,
-                Ok(MethodToken::Options) => H11Method::Options,
-                Ok(MethodToken::Patch) => H11Method::Patch,
-                Ok(MethodToken::Post) => H11Method::Post,
-                Ok(MethodToken::Put) => H11Method::Put,
-                Ok(MethodToken::Query) => H11Method::Query,
-                Ok(MethodToken::Trace) => H11Method::Trace,
-                _ => return Err(H11Error::InvalidMethod),
-            };
-            ret = Some(maybe_method);
-        } else {
-            match token {
-                Ok(MethodToken::MethodSep) => {
-                    got_space = true;
-                    break;
-                }
-                _ => return Err(H11Error::InvalidAfterMethod),
+    if let Some(token) = lexer.next() {
+        let maybe_method = match token {
+            Ok(MethodToken::Connect) => H11Method::Connect,
+            Ok(MethodToken::Delete) => H11Method::Delete,
+            Ok(MethodToken::Get) => H11Method::Get,
+            Ok(MethodToken::Head) => H11Method::Head,
+            Ok(MethodToken::Options) => H11Method::Options,
+            Ok(MethodToken::Patch) => H11Method::Patch,
+            Ok(MethodToken::Post) => H11Method::Post,
+            Ok(MethodToken::Put) => H11Method::Put,
+            Ok(MethodToken::Query) => H11Method::Query,
+            Ok(MethodToken::Trace) => H11Method::Trace,
+            Ok(MethodToken::Incomplete) => {
+                return Ok(ParseIndication::Incomplete);
             }
-        }
+            _ => return Err(H11Error::InvalidMethod),
+        };
+        ret = Some(maybe_method);
     }
     match ret {
-        None => Err(H11Error::ExpectedMethod),
-        Some(m) => match got_space {
-            true => Ok(m),
-            false => Err(H11Error::ExpectedSpAfterMethod),
-        },
+        None => Ok(ParseIndication::Incomplete),
+        Some(m) => Ok(ParseIndication::Completed(m)),
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::ParseIndication;
     use rstest::rstest;
 
     #[rstest]
@@ -94,15 +88,16 @@ mod test {
     fn parse_ok(#[case] input: &str, #[case] expected: H11Method) {
         let mut l = MethodToken::lexer(input.as_bytes());
         let r = parse_h11method(&mut l).unwrap();
-        assert_eq!(r, expected);
+        assert_eq!(r, ParseIndication::Completed(expected));
     }
 
     #[test]
-    fn parse_err_expect_sp() {
+    fn parse_ok_expect_incomplete_wo_sp() {
         let input = "CONNECT";
         let mut l = MethodToken::lexer(input.as_bytes());
         let r = parse_h11method(&mut l);
-        assert_eq!(r, Err(H11Error::ExpectedSpAfterMethod));
+        assert_eq!(r, Ok(ParseIndication::Incomplete));
+        assert_eq!(l.span().start, 0);
     }
 
     #[test]
@@ -114,11 +109,12 @@ mod test {
     }
 
     #[test]
-    fn parse_err_expect_method() {
+    fn parse_ok_expect_incomplete_on_empty() {
         let input = "";
         let mut l = MethodToken::lexer(input.as_bytes());
         let r = parse_h11method(&mut l);
-        assert_eq!(r, Err(H11Error::ExpectedMethod));
+        assert_eq!(r, Ok(ParseIndication::Incomplete));
+        assert_eq!(l.span().end, 0);
     }
 
     #[test]
@@ -126,6 +122,6 @@ mod test {
         let input = "CONNECT%";
         let mut l = MethodToken::lexer(input.as_bytes());
         let r = parse_h11method(&mut l);
-        assert_eq!(r, Err(H11Error::InvalidAfterMethod));
+        assert_eq!(r, Err(H11Error::InvalidMethod));
     }
 }

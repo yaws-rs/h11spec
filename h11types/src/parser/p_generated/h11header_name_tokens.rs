@@ -18,7 +18,7 @@ pub(crate) enum HeaderKeyToken<'raw> {
     EmptyHeaders,
     #[regex(r"\r\n", priority = 50)]
     Complete,
-    #[regex(r"([A-Za-z0-9\-_]+):\s", |lex| lex.slice().strip_suffix(&[58, 32]).unwrap(), priority = 20)]
+    #[regex(r"([A-Za-z0-9\-_]+):\s", |lex| lex.slice().strip_suffix(&[58, 32]).expect("Bug"), priority = 20)]
     Other(&'raw [u8]),
     #[regex(r"([A-Za-z0-9\-_]+)$", |lex| lex.slice(), priority = 10)]
     Incomplete(&'raw [u8]),

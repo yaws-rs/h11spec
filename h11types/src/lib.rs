@@ -48,8 +48,13 @@ mod p_receivers;
 pub use p_receivers::*;
 
 //-----------------------------------------------
+// Sender (Builder) types
+//-----------------------------------------------
+mod b_senders;
+#[doc(inline)]
+pub use b_senders::*;
+
+//-----------------------------------------------
 // Validated types
 //-----------------------------------------------
 mod validated;
-#[doc(inline)]
-pub use validated::*;

@@ -5,11 +5,14 @@ expression: "HeaderTc { tc_input, tester, res, meta }"
 HeaderTc {
     tc_input: "Content-length: 20x\r\nSet-Cookie: 3\r\nSet-Cookie: 2\r\nSet-Cookie: 1\r\n",
     tester: HeaderTest {
-        seen: [],
+        seen: [
+            "SetCookie(Integer([51]))",
+            "SetCookie(Integer([50]))",
+            "SetCookie(Integer([49]))",
+        ],
     },
     res: Err(
-        InvalidHeaderValue(
-            17,
+        InvalidHeaderValueNoPos(
             ExpectedInteger,
         ),
     ),

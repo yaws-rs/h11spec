@@ -30,7 +30,6 @@ pub struct HeaderParser {
 
 impl HeaderParser {
     /// Parse streamed chunk of data
-    #[must_use]
     pub fn parse<'raw, R: HeaderReceiver>(
         &mut self,
         r: &mut R,
@@ -64,7 +63,7 @@ impl HeaderParser {
                     let maybe_incomplete_at = lexer.span().start;
                     let mut v_lexer: Lexer<'raw, HeaderValueToken<'raw>> = lexer.morph();
 
-                    if v_lexer.remainder() == [] {
+                    if v_lexer.remainder().is_empty() {
                         return Ok(HeaderStatus::Incomplete(
                             maybe_incomplete_at,
                             &input[maybe_incomplete_at..],
@@ -113,7 +112,6 @@ impl HeaderParser {
 mod test {
 
     use super::*;
-    use crate::RespIndicative;
     use insta::assert_debug_snapshot;
     use rstest::rstest;
     use rstest::Context;
@@ -127,7 +125,7 @@ mod test {
     use crate::{H11MaybeValue, H11UnknownField};
 
     impl HeaderReceiver for TestReceiver {
-        fn req_header<'h, 'd>(&mut self, hdr: H11Header<'h>) -> RespIndicative<'d> {
+        fn req_header<'h>(&mut self, hdr: H11Header<'h>) -> () {
             let out = match hdr {
                 H11Header::Unknown(H11UnknownField(field), H11MaybeValue::Bytes(value)) => {
                     format!(
@@ -139,7 +137,6 @@ mod test {
                 _ => format!("Hd{:?}", hdr),
             };
             self.hdrs.push(out);
-            RespIndicative::GoAhead
         }
         fn req_headers_finish(&mut self) -> () {
             self.finished = true;

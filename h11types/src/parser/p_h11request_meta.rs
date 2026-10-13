@@ -17,18 +17,31 @@ use crate::parser::{
     parse_h11method, parse_h11target, parse_h11version, MethodToken, TargetToken, VersionToken,
 };
 
-use crate::{HeaderReceiver, MetaReceiver};
+use crate::HeaderReceiver;
+use crate::RequestHeaderReceiver;
+use crate::RequestReceiver;
 
-use crate::p_receivers::TargetReceiver;
+use crate::p_receivers::RequestTargetReceiver;
+
+/// Indicative completion status of start line parsing
+#[derive(Debug, PartialEq)]
+pub enum StartLineStatus<'h> {
+    /// Completed at position relative to input
+    Complete(usize),
+    /// Incomplete from position relative to input
+    Incomplete(usize, &'h [u8]),
+}
+
+use crate::ParseIndication;
 
 impl H11RequestMeta {
-    /// Advance parsing the status line with the given input buffer
+    /// Advance parsing the start line with the given input buffer
     #[inline]
-    pub fn advance_status_with<'raw, R: MetaReceiver>(
+    pub fn advance_status_with<'raw, R: RequestReceiver>(
         &mut self,
         r: &mut R,
         input: &'raw [u8],
-    ) -> Result<usize, H11Error> {
+    ) -> Result<StartLineStatus<'raw>, H11Error> {
         let mut lexer: Lexer<'raw, MethodToken<'raw>> = MethodToken::lexer(input);
 
         let mut try_method = H11Method::Unknown;
@@ -36,7 +49,13 @@ impl H11RequestMeta {
         let mut try_version = H11Version::Unknown;
 
         if self.method == H11Method::Unknown {
-            try_method = parse_h11method(&mut lexer)?;
+            try_method = match parse_h11method(&mut lexer) {
+                Ok(ParseIndication::Incomplete) => {
+                    return Ok(StartLineStatus::Incomplete(0, input));
+                }
+                Ok(ParseIndication::Completed(mthd)) => mthd,
+                Err(e) => return Err(e),
+            };
         }
 
         let mut loc_parsed = false;
@@ -44,15 +63,27 @@ impl H11RequestMeta {
         if self.target_loc.is_none() {
             let start = lexer.span().start;
             let mut target_lexer: Lexer<'raw, TargetToken<'raw>> = lexer.morph();
-            parse_h11target(&mut target_lexer)?;
+            let _target = match parse_h11target(&mut target_lexer) {
+                Ok(ParseIndication::Incomplete) => {
+                    return Ok(StartLineStatus::Incomplete(0, input));
+                }
+                Ok(ParseIndication::Completed(target)) => target,
+                Err(e) => return Err(e),
+            };
             try_target = Some((start, target_lexer.span().start));
             lexer = target_lexer.morph();
             loc_parsed = true;
         }
 
         if self.version == H11Version::Unknown {
-            let mut version_lexer: Lexer<'raw, VersionToken<'raw>> = lexer.morph();
-            try_version = parse_h11version(&mut version_lexer)?;
+            let mut version_lexer: Lexer<'_, VersionToken> = lexer.morph();
+            try_version = match parse_h11version(&mut version_lexer) {
+                Ok(ParseIndication::Incomplete) => {
+                    return Ok(StartLineStatus::Incomplete(0, input));
+                }
+                Ok(ParseIndication::Completed(version)) => version,
+                Err(e) => return Err(e),
+            };
             lexer = version_lexer.morph();
         }
 
@@ -65,12 +96,12 @@ impl H11RequestMeta {
             if let Some((loc_start, loc_end)) = self.target_loc {
                 let mut i_target = r.impl_target();
                 let target_loc_data = &input[loc_start..loc_end];
-                let _ = i_target.req_target_init(target_loc_data);
-                let _ = i_target.req_target_finish();
+                i_target.req_target_init(target_loc_data);
+                i_target.req_target_finish();
             }
         }
 
-        Ok(lexer.span().end)
+        Ok(StartLineStatus::Complete(lexer.span().end))
     }
 }
 
@@ -83,25 +114,25 @@ struct HeaderRelay<'r, R> {
     in_header_err: Option<H11Error>,
 }
 
-use crate::{Resp4xx, RespIndicative};
-
 impl<'r, R> HeaderReceiver for HeaderRelay<'r, R>
 where
-    R: HeaderReceiver,
+    R: RequestHeaderReceiver,
 {
-    fn req_header<'h, 'd>(&mut self, hdr: H11Header<'h>) -> RespIndicative<'d> {
+    fn req_header<'h>(&mut self, hdr: H11Header<'h>) {
         match self.myself.in_header(hdr) {
             Err(e) => {
                 self.in_header_err = Some(e);
-                RespIndicative::R4xx(Resp4xx::BadRequest)
+                //RespIndicative::R4xx(Resp4xx::BadRequest)
             }
-            _ => self.relay_receiver.req_header(hdr),
+            _ => {
+                self.relay_receiver.req_header(hdr);
+            }
         }
     }
-    fn req_headers_finish(&mut self) -> () {
+    fn req_headers_finish(&mut self) {
         self.myself.headers_end = Some(0);
         self.relay_receiver.req_headers_finish();
-        ()
+        //RespIndicative::GoAhead
     }
 }
 
@@ -114,7 +145,7 @@ impl H11RequestMeta {
     ///
     /// Minimum input is always a single complete header
     #[inline]
-    pub fn advance_headers_with<'raw, R: HeaderReceiver>(
+    pub fn advance_headers_with<'raw, R: RequestHeaderReceiver>(
         &mut self,
         r: &mut R,
         input: &'raw [u8],
@@ -145,7 +176,7 @@ pub(super) use test::do_header_test;
 mod test {
 
     use super::*;
-    use crate::NoReceiver;
+    use crate::NoRequestReceiver;
     use crate::RespIndicative;
     use insta::assert_debug_snapshot;
     use rstest::rstest;
@@ -186,15 +217,17 @@ mod test {
         pub(crate) seen: Vec<String>,
     }
 
-    impl HeaderReceiver for HeaderTest {
-        fn req_header<'h, 'd>(&mut self, header: H11Header<'h>) -> RespIndicative<'d> {
+    impl RequestHeaderReceiver for HeaderTest {
+        fn req_header<'h>(&mut self, header: H11Header<'h>) -> RespIndicative {
             self.seen.push(format!("{:?}", header));
             RespIndicative::GoAhead
         }
-        fn req_headers_finish(&mut self) -> () {
-            ()
+        fn req_headers_finish(&mut self) -> RespIndicative {
+            RespIndicative::GoAhead
         }
     }
+
+    use super::StartLineStatus;
 
     #[rstest]
     #[case("GET / HTTP/1.1\r\n", 16)]
@@ -203,40 +236,52 @@ mod test {
         let mut meta = H11RequestMeta::default();
 
         let advanced = meta
-            .advance_status_with(&mut NoReceiver, raw_in.as_bytes())
+            .advance_status_with(&mut NoRequestReceiver, raw_in.as_bytes())
             .unwrap();
-        assert_eq!(advanced, expected_advanced);
+        assert_eq!(advanced, StartLineStatus::Complete(expected_advanced));
         assert_eq!(meta.method, H11Method::Get);
         assert_eq!(meta.status_complete(), true);
     }
 
     #[rstest]
-    #[case("GET / HTTP/1.1", H11Error::ExpectedCrLfAfterVersion)]
-    // TODO: fix
-    //#[case("GET / HTTP/1.1\r", H11Error::ExpectedCrLfAfterVersion)]
-    #[case("GET / HTTP/1.1\r", H11Error::InvalidAfterVersion)]
-    #[case("GET / ", H11Error::ExpectedVersion)]
+    #[case("", Ok(StartLineStatus::Incomplete(0, "".as_bytes())))]
+    #[case("GE", Ok(StartLineStatus::Incomplete(0, "GE".as_bytes())))]
+    #[case("GET", Ok(StartLineStatus::Incomplete(0, "GET".as_bytes())))]
+    #[case("GET ", Ok(StartLineStatus::Incomplete(0, "GET ".as_bytes())))]
+    #[case("GET /", Ok(StartLineStatus::Incomplete(0, "GET /".as_bytes())))]
+    #[case(
+        "GET / HTTP/1.1",
+        Ok(StartLineStatus::Incomplete(0, b"GET / HTTP/1.1"))
+    )]
+    #[case(
+        "GET / HTTP/1.1\r",
+        Ok(StartLineStatus::Incomplete(0, b"GET / HTTP/1.1\r"))
+    )]
+    #[case("GET / ", Ok(StartLineStatus::Incomplete(0, b"GET / ")))]
     #[case(
         "GET /foo=bar?ding=dong&ping=baa+baa#anchor",
-        H11Error::ExpectedSpAfterTarget
+        Ok(StartLineStatus::Incomplete(0, b"GET /foo=bar?ding=dong&ping=baa+baa#anchor"))
     )]
-    fn try_advance_status_incomplete(#[case] raw_in: &str, #[case] expected_err: H11Error) {
+    fn try_advance_status_incomplete<'h>(
+        #[case] raw_in: &'h str,
+        #[case] expected_res: Result<StartLineStatus<'h>, H11Error>,
+    ) {
         let mut meta = H11RequestMeta::default();
 
-        let res = meta.advance_status_with(&mut NoReceiver, raw_in.as_bytes());
-        assert_eq!(res, Err(expected_err));
+        let res = meta.advance_status_with(&mut NoRequestReceiver, raw_in.as_bytes());
+        assert_eq!(res, expected_res);
         assert_eq!(meta.method, H11Method::Unknown);
         assert_eq!(meta.status_complete(), false);
     }
 
     #[rstest]
-    #[case("GET / HTTP/1.1\n", H11Error::InvalidAfterVersion)]
-    #[case("GET /\r\n", H11Error::InvalidAfterTarget)]
-    #[case("GET\r\n", H11Error::InvalidAfterMethod)]
+    #[case("GET / HTTP/1.1\n", H11Error::InvalidVersion)]
+    #[case("GET /\r\n", H11Error::InvalidTarget)]
+    #[case("GET\r\n", H11Error::InvalidMethod)]
     fn try_advance_status_err(#[case] raw_in: &str, #[case] expected_err: H11Error) {
         let mut meta = H11RequestMeta::default();
 
-        let res = meta.advance_status_with(&mut NoReceiver, raw_in.as_bytes());
+        let res = meta.advance_status_with(&mut NoRequestReceiver, raw_in.as_bytes());
         assert_eq!(res, Err(expected_err));
         assert_eq!(meta.method, H11Method::Unknown);
         assert_eq!(meta.status_complete(), false);

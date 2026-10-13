@@ -6,7 +6,7 @@ HeaderTc {
     tc_input: "Content-Length: 42\r\nContent-Length: 44\r\n",
     tester: HeaderTest {
         seen: [
-            "ContentLength(42)",
+            "ContentLength(Integer([52, 50]))",
         ],
     },
     res: Err(

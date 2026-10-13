@@ -18,7 +18,7 @@ impl<'h> TryFrom<HeaderValueToken<'h>> for H11MaybeValue<'h> {
     fn try_from(tok: HeaderValueToken<'h>) -> Result<Self, Self::Error> {
         match tok {
             HeaderValueToken::Incomplete(_i) => Err(HeaderValidationError::Internal),
-            HeaderValueToken::Integer(i) => Ok(H11MaybeValue::Integer(i)),
+            HeaderValueToken::MaybeInteger(i) => Ok(H11MaybeValue::Integer(i)),
             HeaderValueToken::MaybeValue(o) => Ok(H11MaybeValue::Bytes(o)),
             HeaderValueToken::MaybeQuotedValue(qv) => {
                 let qv_start = match qv.strip_prefix(&[34]) {
