@@ -12,7 +12,7 @@ categories = ["science"]
 
 [dependencies]
 blueprint = { version = "0.2.0", default-features = false }
-h11types = { path = "../h11types", default-features = false }
+h11types = { path = "../h11types", version = "0.0.1", default-features = false }
 
 [features]
 default = []
