@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Obtain rick
-      - run: curl --output /tmp/rick-roll.gif https://media.tenor.com/Lw4_T2lRPGoAAAAM/rickroll-meme.gif
+        run: curl --output /tmp/rick-roll.gif https://media.tenor.com/Lw4_T2lRPGoAAAAM/rickroll-meme.gif
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
