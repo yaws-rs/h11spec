@@ -1072,6 +1072,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7249219f66ced02969388cf2bb044a09756a083d0fab1e566056b04d9fbcaa5"
 
 [[package]]
+name = "yaws-app-rick-roll"
+version = "0.0.1"
+dependencies = [
+ "blueprint-h11spec",
+ "criterion",
+ "insta",
+ "rstest 0.26.1",
+]
+
+[[package]]
 name = "yuri"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

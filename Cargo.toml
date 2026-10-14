@@ -1,3 +1,3 @@
 [workspace]
-members = ["h11types", "iana", "blueprint"]
+members = ["h11types", "iana", "blueprint", "apps/*"]
 resolver = "2"
