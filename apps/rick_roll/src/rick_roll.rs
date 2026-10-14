@@ -9,13 +9,16 @@
 //! 2. Find the below configuration and set both the rick image location & it's size
 
 //-------------------------------------------
-// Set below things:
+// The default size is this:
+// - https://media.tenor.com/Lw4_T2lRPGoAAAAM/rickroll-meme.gif
+//
+// Set below things for your own copy:
 //-------------------------------------------
 // CHANGE THE BELOW FOR THE LOCATION OF RICK:
 const RICK_ROLL: &[u8] = core::include_bytes!("/tmp/rick-roll.gif");
 
 // CHANGE THE BELOW FOR THE SIZE OF RICK:
-const RICK_SIZE: &str = "193274";
+const RICK_SIZE: &str = "461688";
 //-------------------------------------------
 
 use blueprint_h11spec::Resp2xx;
