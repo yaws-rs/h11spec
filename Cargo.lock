@@ -1082,6 +1082,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "yaws-h11spec-test-bp"
+version = "0.0.1"
+dependencies = [
+ "blueprint",
+ "blueprint-h11spec",
+ "criterion",
+ "insta",
+ "rstest 0.26.1",
+ "yaws-app-rick-roll",
+]
+
+[[package]]
 name = "yuri"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
