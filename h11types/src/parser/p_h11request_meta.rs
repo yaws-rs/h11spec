@@ -58,21 +58,23 @@ impl H11RequestMeta {
             };
         }
 
-        let mut loc_parsed = false;
-
         if self.target_loc.is_none() {
             let start = lexer.span().start;
             let mut target_lexer: Lexer<'raw, TargetToken<'raw>> = lexer.morph();
-            let _target = match parse_h11target(&mut target_lexer) {
+            let target = match parse_h11target(&mut target_lexer) {
                 Ok(ParseIndication::Incomplete) => {
                     return Ok(StartLineStatus::Incomplete(0, input));
                 }
                 Ok(ParseIndication::Completed(target)) => target,
                 Err(e) => return Err(e),
             };
+
+            let mut i_target = r.impl_target();
+            i_target.req_target_init(target);
+            i_target.req_target_finish();
+
             try_target = Some((start, target_lexer.span().start));
             lexer = target_lexer.morph();
-            loc_parsed = true;
         }
 
         if self.version == H11Version::Unknown {
@@ -90,16 +92,6 @@ impl H11RequestMeta {
         self.version = try_version;
         self.target_loc = try_target;
         self.method = try_method;
-
-        // TODO: stream parsing target. We should not expect it to be fully in
-        if loc_parsed {
-            if let Some((loc_start, loc_end)) = self.target_loc {
-                let mut i_target = r.impl_target();
-                let target_loc_data = &input[loc_start..loc_end];
-                i_target.req_target_init(target_loc_data);
-                i_target.req_target_finish();
-            }
-        }
 
         Ok(StartLineStatus::Complete(lexer.span().end))
     }
@@ -122,7 +114,6 @@ where
         match self.myself.in_header(hdr) {
             Err(e) => {
                 self.in_header_err = Some(e);
-                //RespIndicative::R4xx(Resp4xx::BadRequest)
             }
             _ => {
                 self.relay_receiver.req_header(hdr);
@@ -132,7 +123,6 @@ where
     fn req_headers_finish(&mut self) {
         self.myself.headers_end = Some(0);
         self.relay_receiver.req_headers_finish();
-        //RespIndicative::GoAhead
     }
 }
 
