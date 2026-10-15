@@ -13,8 +13,10 @@ pub enum H11Error {
     InvalidTarget,
     /// Invalid HTTP Version
     InvalidVersion,
-    /// Header key is not a IANA registered header
-    MissingHeaderKey,
+    /// Bad request encountered
+    BadRequest(&'static str),
+    // /// Header key is not a IANA registered header
+    // MissingHeaderKey,
     /// Encountered invalid header at position
     InvalidHeaders(usize),
     // Encuntered invalid header value/s at position
@@ -43,6 +45,8 @@ pub enum HeaderValidationError {
     ExpectedQuotedValue,
     /// Expected a valid Connection header value
     ExpectedConnection,
+    /// Expected a valid Transfer-Encoding header value
+    ExpectedTransferEncoding,
     /// Internal validation error
     Internal,
 }

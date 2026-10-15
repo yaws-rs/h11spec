@@ -10,13 +10,23 @@ use core::num::NonZero;
 pub use method::*;
 
 /// HTTP Transfer-Encoding
-#[derive(Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub enum H11TransferEncoding {
     /// None
     #[default]
     None,
     /// Chunked encoding
     Chunked,
+}
+
+impl H11TransferEncoding {
+    /// Header value as bytes
+    pub fn as_bytes_out(&self) -> &[u8] {
+        match self {
+            Self::None => &[],
+            Self::Chunked => "chunked".as_bytes(),
+        }
+    }
 }
 
 /// HTTP Version
@@ -73,7 +83,9 @@ pub enum H11TransferCompression {
 pub enum RequestBodySize {
     /// Fixed size request body to be streamed
     Fixed(NonZero<usize>),
-    /// Dynamic size (unknown length) requeste body to be streamed
+    /// Chunked size (unknown length) request body to be streamed
+    Chunked,
+    /// Dynamic size (unknown length) request body to be streamed
     Dynamic,
     /// No request body
     Empty,
@@ -114,13 +126,17 @@ impl H11RequestMeta {
     }
     /// Request body size
     pub fn body_size(&self) -> RequestBodySize {
-        match self.body_length {
+        let l = match self.body_length {
             Some(s) => match s {
                 0 => RequestBodySize::Empty,
                 _ => RequestBodySize::Fixed(NonZero::new(s).expect("Bug")),
             },
             None => RequestBodySize::Empty,
+        };
+        if let H11TransferEncoding::Chunked = self.transfer_encoding {
+            return RequestBodySize::Chunked;
         }
+        return l;
     }
     /// Request method
     pub fn method(&self) -> H11Method {
@@ -139,6 +155,8 @@ pub enum H11Header<'h> {
     SetCookie(H11MaybeValue<'h>),
     /// RFC 9110 s. 7.2
     Host(H11MaybeValue<'h>),
+    /// RFC 9110 s. 6.1
+    TransferEncoding(H11TransferEncoding),
     /// Unknown header field containing maybe a header value
     Unknown(H11UnknownField<'h>, H11MaybeValue<'h>),
 }
@@ -212,6 +230,7 @@ impl<'h> H11Header<'h> {
             Self::ContentLength(l) => ("Content-Length".as_bytes(), l.as_bytes_out()),
             Self::SetCookie(c) => ("Set-Cookie".as_bytes(), c.as_bytes_out()),
             Self::Host(h) => ("Host".as_bytes(), h.as_bytes_out()),
+            Self::TransferEncoding(te) => ("Transfer-Encoding".as_bytes(), te.as_bytes_out()),
             Self::Unknown(field, value) => (field.as_bytes_out(), value.as_bytes_out()),
         };
         (field, value)

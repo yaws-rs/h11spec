@@ -14,6 +14,8 @@ pub(crate) enum HeaderKeyToken<'raw> {
     Host,
     #[regex(r"(?:Connection):\s*", priority = 100)]
     Connection,
+    #[regex(r"(?:Transfer-Encoding):\s*", priority = 100)]
+    TransferEncoding,
     #[regex(r"\r\n\r\n", priority = 100)]
     EmptyHeaders,
     #[regex(r"\r\n", priority = 50)]

@@ -1,0 +1,36 @@
+[package]
+name = "yaws-app-mirror"
+version = "0.0.1"
+edition = "2021"
+description = "YAWS app Mirror As a Service"
+homepage = "https://github.com/yaws-rs/h11spec"
+keywords = ["io", "uring", "epoll", "async"]
+license = "Apache-2.0/MIT"
+readme = "README.md"
+repository = "https://github.com/yaws-rs/h11spec"
+categories = ["science"]
+
+[dependencies]
+blueprint-h11spec = { path = "../../blueprint", version = "0.0.1", default-features = false, features = ["h11server"] }
+
+[dev-dependencies]
+insta = { version = "1.47" }
+rstest = { version = "0.26" }
+criterion = { version = "0.5" }
+
+[features]
+default = []
+alloc = []
+ptr = []
+static = []
+std = []
+
+[package.metadata.docs.rs]
+features = [""]
+
+#[[bench]]
+#name = "bencher"
+#required-features = []
+#harness = false
+
+[lints.rust]

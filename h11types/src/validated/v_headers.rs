@@ -3,6 +3,7 @@
 mod v_connection;
 mod v_content_length;
 //mod v_host;
+mod v_transfer_encoding;
 mod v_unknown;
 
 use crate::H11Header;
@@ -21,6 +22,9 @@ impl<'h> TryFrom<(HeaderKeyToken<'h>, HeaderValueToken<'h>)> for H11Header<'h> {
             HeaderKeyToken::SetCookie => Ok(H11Header::SetCookie(tokens.1.try_into()?)),
             HeaderKeyToken::Host => Ok(H11Header::Host(tokens.1.try_into()?)),
             HeaderKeyToken::Connection => Ok(H11Header::Connection(tokens.1.try_into()?)),
+            HeaderKeyToken::TransferEncoding => {
+                Ok(H11Header::TransferEncoding(tokens.1.try_into()?))
+            }
             #[allow(unreachable_patterns)]
             _ => todo!(),
         }

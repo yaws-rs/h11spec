@@ -64,8 +64,8 @@ pub trait HeaderReceiver {
 
 /// Implement to receive body
 pub trait RequestBodyReceiver {
-    /// Receive a chunk of data
-    fn payload_chunk(&mut self, _chunk: &[u8]) -> RespIndicative;
+    /// Receive data of body
+    fn req_body_add(&mut self, _data: &[u8]) -> RespIndicative;
 }
 
 /// Marker to use when no header receiver is used
