@@ -1,6 +1,6 @@
 [package]
 name = "blueprint-h11spec"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 description = "yaws h11spec blueprint"
 homepage = "https://github.com/yaws-rs/h11spec"
@@ -12,7 +12,8 @@ categories = ["science"]
 
 [dependencies]
 blueprint = { version = "0.2.0", default-features = false }
-h11types = { path = "../h11types", version = "0.0.1", default-features = false }
+h11types = { path = "../h11types", version = "0.0.2", default-features = false }
+ychunked = { version = "0.0.1", default-features = false, features = ["decode"] }
 
 [features]
 default = []

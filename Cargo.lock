@@ -53,6 +53,7 @@ version = "0.0.1"
 dependencies = [
  "blueprint",
  "h11types",
+ "ychunked",
 ]
 
 [[package]]
@@ -379,7 +380,7 @@ checksum = "0cc23270f6e1808e30a928bdc84dea0b9b4136a8bc82338574f23baf47bbd280"
 
 [[package]]
 name = "h11types"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "criterion",
  "httparse",
@@ -1072,6 +1073,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7249219f66ced02969388cf2bb044a09756a083d0fab1e566056b04d9fbcaa5"
 
 [[package]]
+name = "yaws-app-mirror"
+version = "0.0.1"
+dependencies = [
+ "blueprint-h11spec",
+ "criterion",
+ "insta",
+ "rstest 0.26.1",
+]
+
+[[package]]
 name = "yaws-app-rick-roll"
 version = "0.0.1"
 dependencies = [
@@ -1091,6 +1102,15 @@ dependencies = [
  "insta",
  "rstest 0.26.1",
  "yaws-app-rick-roll",
+]
+
+[[package]]
+name = "ychunked"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "99d22633ccd34eaad6988d39e667997e2b35a58fbe05acb08aa000bf5696f064"
+dependencies = [
+ "logos 0.16.1",
 ]
 
 [[package]]
