@@ -9,8 +9,8 @@ use blueprint_h11spec::{
 use blueprint_h11spec::{RespComplete, RespIndicative};
 use blueprint_h11spec::{ResponseBodySize, ResponseSender};
 
-use alloc::vec::Vec;
 use alloc::string::String;
+use alloc::vec::Vec;
 //use crate::alloc::string::ToString;
 
 /// Mirror YAWS App
@@ -106,8 +106,7 @@ impl RequestHeaderReceiver for Mirror {
                     Err(_) => {
                         self.bad_request = Some("Bad Non-UTF8 Content-Length integer");
                         return RespIndicative::GoAhead;
-                    },
-                    
+                    }
                 };
                 match self.body_expected_len {
                     None => {
@@ -115,20 +114,20 @@ impl RequestHeaderReceiver for Mirror {
                             Ok(u) => {
                                 self.test_data.extend(l);
                                 Some(u)
-                            },
+                            }
                             Err(_) => {
                                 self.bad_request = Some("Bad content-length.");
                                 None
-                            },
+                            }
                         };
-                    },
+                    }
                     // This should never happen
                     Some(_) => {
                         self.bad_request = Some("Multiple Content-Length headers.");
                     }
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
         self.headers_in.push(format!("{:?}", hdr));
         RespIndicative::GoAhead
@@ -166,7 +165,7 @@ impl ResponseSender for Mirror {
         }
     }
     #[inline]
-    fn resp_body_len(&mut self) -> ResponseBodySize {        
+    fn resp_body_len(&mut self) -> ResponseBodySize {
         ResponseBodySize::Fixed(self.body.len())
     }
     #[inline]

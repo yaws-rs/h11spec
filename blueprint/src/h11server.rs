@@ -1,10 +1,15 @@
 //! h11spec Server blueprints
 
+mod chunked;
+use chunked::ChunkRelay;
+use ychunked::{ChunkDecoder, DecodingStage};
+
 use crate::H11Error;
+use crate::{borrow_remaining_left_b, try_fill_left_with, FillAttempt};
 use blueprint::BluePrint;
 use blueprint::Orbit;
 use blueprint::{InBuffer, Left, Right};
-use h11types::{HeaderStatus, StartLineStatus};
+use h11types::{HeaderStatus, RequestBodySize, StartLineStatus};
 
 /// empty for now
 pub struct Position;
@@ -30,10 +35,6 @@ pub enum H11ServingStage {
     Start,
     /// Expect Request Headers or <CRLF><CRLF>
     Headers,
-    /// Expect Encoded content to pass through as Decoded
-    Decoding,
-    /// Expect Decoded content to pass through as Encoded
-    Encoding,
     /// Expect Request Body
     Body,
     /// Expect Response
@@ -42,6 +43,8 @@ pub enum H11ServingStage {
     Shutdown,
     /// Expect Recycle
     Recycle,
+    /// Bad Client Request
+    BadRequest,
 }
 
 use h11types::H11RequestMeta;
@@ -61,6 +64,7 @@ enum StatusOut {
 pub struct H11Serving<App> {
     stage: H11ServingStage,
     req_meta: H11RequestMeta,
+    req_relayed: usize,
     status_out: StatusOut,
     expected_response_len: ResponseBodySize,
     expected_filled: usize,
@@ -150,66 +154,46 @@ where
                         continue;
                     }
                 }
-                H11ServingStage::Decoding => {
-                    todo!()
-                }
-                H11ServingStage::Encoding => {
-                    todo!()
-                }
                 H11ServingStage::Body => {
-                    todo!()
+                    if let RequestBodySize::Fixed(expected_len) = self.req_meta.body_size() {
+                        let remaining = expected_len.get() - self.req_relayed;
+                        let relay_size = if left_in_b.len() >= remaining {
+                            self.stage = H11ServingStage::Response;
+                            remaining
+                        } else {
+                            left_in_b.len()
+                        };
+                        match left_in_b.split_off_mut(..relay_size) {
+                            Some(relay_b) => {
+                                discard += relay_b.len();
+                                self.app.req_body_add(&relay_b);
+                            }
+                            None => {}
+                        }
+                    } else {
+                        let mut chunk_relay = ChunkRelay { myself: self };
+                        let mut decoder = ChunkDecoder::new();
+                        let res = decoder.decode_detached(&mut chunk_relay, left_in_b);
+
+                        let advanced = match res {
+                            Ok(DecodingStage::Complete(discard_add)) => {
+                                self.stage = H11ServingStage::Response;
+                                discard_add
+                            }
+                            Ok(DecodingStage::WaitingSize(discard_add)) => discard_add,
+                            Ok(DecodingStage::Decoding(discard_add, _pending)) => discard_add,
+                            Ok(DecodingStage::WaitingCrLf(discard_add)) => discard_add,
+                            Err(_) => {
+                                self.stage = H11ServingStage::BadRequest;
+                                continue;
+                            }
+                        };
+                        discard += advanced;
+                        let _ = left_in_b.split_off_mut(..advanced);
+                    }
                 }
                 H11ServingStage::Response => {
                     let mut out_pos = 0;
-
-                    enum FillAttempt {
-                        Overflow,
-                        Complete(usize),
-                    }
-
-                    #[inline]
-                    fn try_fill_left_with(
-                        left_out_b: &mut [u8],
-                        try_adds: &[&[u8]],
-                    ) -> FillAttempt {
-                        let mut combined_len: usize = 0;
-
-                        for try_add in try_adds {
-                            let try_add_len = try_add.len();
-                            let (adds, overflows) = combined_len.overflowing_add(try_add_len);
-                            if overflows {
-                                return FillAttempt::Overflow;
-                            }
-                            combined_len = adds;
-                        }
-
-                        if combined_len > left_out_b.len() {
-                            return FillAttempt::Overflow;
-                        }
-
-                        let mut offset = 0;
-
-                        for try_add in try_adds {
-                            let end_pos = offset + try_add.len();
-                            left_out_b[offset..end_pos].copy_from_slice(try_add);
-                            offset += try_add.len();
-                        }
-                        FillAttempt::Complete(offset)
-                    }
-
-                    #[inline]
-                    fn borrow_remaining_left_b(
-                        left_out_b: &mut [u8],
-                        out_pos: usize,
-                        offset: usize,
-                    ) -> &mut [u8] {
-                        let (try_pos_change, chk_overflow) = out_pos.overflowing_add(offset);
-                        if chk_overflow || try_pos_change > left_out_b.len() {
-                            todo!()
-                        }
-                        let end_pos = left_out_b.len() - out_pos - offset;
-                        &mut left_out_b[out_pos..end_pos]
-                    }
 
                     if self.status_out == StatusOut::Initialized {
                         let resp_status = self.app.resp_on_status();
@@ -232,9 +216,16 @@ where
                     }
 
                     if let StatusOut::HeadersSent(ref mut sent) = self.status_out {
-                        let resp_headers = self.app.resp_on_headers(*sent);
+                        let hdr_count = self.app.resp_on_header_count();
 
-                        for resp_header in resp_headers {
+                        if *sent >= hdr_count {
+                            self.status_out = StatusOut::HeadersCompleted;
+                            continue;
+                        }
+
+                        for x in *sent..hdr_count {
+                            let resp_header = self.app.resp_on_header(x);
+
                             let (out_header_field_b, out_header_value_b) =
                                 resp_header.as_bytes_out();
 
@@ -322,9 +313,24 @@ where
                     break;
                 }
                 H11ServingStage::Shutdown => {
-                    todo!()
+                    break;
                 }
                 H11ServingStage::Recycle => {
+                    break;
+                }
+                H11ServingStage::BadRequest => {
+                    let remaining = borrow_remaining_left_b(left_out_b, 0, 22);
+
+                    let bad_request =
+                        "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n".as_bytes();
+
+                    let filled = match try_fill_left_with(remaining, &[bad_request, CRLF]) {
+                        FillAttempt::Complete(filled) => filled,
+                        FillAttempt::Overflow => break,
+                    };
+                    out_len += filled;
+                    self.stage = H11ServingStage::Shutdown;
+                    l.shutdown();
                     break;
                 }
             }

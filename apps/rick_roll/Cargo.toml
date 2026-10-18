@@ -1,6 +1,6 @@
 [package]
 name = "yaws-app-rick-roll"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 description = "YAWS Rick Roll As a Service"
 homepage = "https://github.com/yaws-rs/h11spec"
@@ -11,7 +11,7 @@ repository = "https://github.com/yaws-rs/h11spec"
 categories = ["science"]
 
 [dependencies]
-blueprint-h11spec = { path = "../../blueprint", version = "0.0.1", default-features = false, features = ["h11server"] }
+blueprint-h11spec = { path = "../../blueprint", version = "0.0.2", default-features = false, features = ["h11server"] }
 
 [dev-dependencies]
 insta = { version = "1.47" }

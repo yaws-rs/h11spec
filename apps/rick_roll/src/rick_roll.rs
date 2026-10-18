@@ -103,7 +103,7 @@ impl RequestHeaderReceiver for RickRoll {
 
 impl RequestBodyReceiver for RickRoll {
     /// Receive a chunk of data but we'll just ignore it
-    fn payload_chunk(&mut self, _chunk: &[u8]) -> RespIndicative {
+    fn req_body_add(&mut self, _chunk: &[u8]) -> RespIndicative {
         RespIndicative::GoAhead
     }
 }
@@ -114,14 +114,13 @@ impl ResponseSender for RickRoll {
     fn resp_on_status(&mut self) -> RespComplete {
         RespComplete::Resp2xx(Resp2xx::Ok)
     }
+    fn resp_on_header_count(&mut self) -> usize {
+        1
+    }
     // We need to tell them how much of a rick they will be getting through headers
     #[inline]
-    fn resp_on_headers<'h>(&'h mut self, at: usize) -> &'h [H11Header<'h>] {
-        if at == 0 {
-            &self.headers
-        } else {
-            &[]
-        }
+    fn resp_on_header<'h>(&'h mut self, at: usize) -> H11Header<'h> {
+        self.headers[at]
     }
     // Runtime asks us how much rick of we are going to send
     #[inline]
