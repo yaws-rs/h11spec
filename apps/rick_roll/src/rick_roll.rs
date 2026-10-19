@@ -15,12 +15,13 @@
 // Set below things for your own copy:
 //-------------------------------------------
 // CHANGE THE BELOW FOR THE LOCATION OF RICK:
-const RICK_ROLL: &[u8] = core::include_bytes!("/tmp/rick-roll.gif");
+//const RICK_ROLL: &[u8] = core::include_bytes!("/tmp/rick-roll.gif");
 
 // CHANGE THE BELOW FOR THE SIZE OF RICK:
-const RICK_SIZE: &str = "461688";
+//const RICK_SIZE: &str = "461688";
 //-------------------------------------------
 
+use blueprint_h11spec::Reset;
 use blueprint_h11spec::Resp2xx;
 use blueprint_h11spec::{H11Header, H11MaybeValue};
 use blueprint_h11spec::{H11Method, H11Version};
@@ -33,7 +34,9 @@ use blueprint_h11spec::{ResponseBodySize, ResponseSender};
 /// sus
 pub struct RickRoll {
     payload_out_cursor: PayloadCursor,
-    headers: [H11Header<'static>; 1],
+    //headers: [H11Header<'static>; 1],
+    rick: &'static [u8],
+    rick_len_buf: itoa::Buffer,
 }
 
 /// Stateful cursor for sending / receiving bytes
@@ -42,14 +45,28 @@ pub struct PayloadCursor {
     consumed: usize,
 }
 
+impl Reset for RickRoll {
+    fn reset(&mut self) {
+        self.payload_out_cursor = PayloadCursor::default();
+    }
+}
+
+impl RickRoll {
+    /// Initialize a Rick-Roll app with the given payload (GIF)
+    pub fn with_rick(rick: &'static [u8]) -> Self {
+        Self {
+            payload_out_cursor: PayloadCursor::default(),
+            rick,
+            rick_len_buf: itoa::Buffer::new(),
+        }
+    }
+}
+
 impl Default for RickRoll {
     fn default() -> Self {
-        RickRoll {
-            payload_out_cursor: PayloadCursor::default(),
-            headers: [H11Header::ContentLength(H11MaybeValue::Integer(
-                RICK_SIZE.as_bytes(),
-            ))],
-        }
+        const RICK_ROLL: &[u8] = core::include_bytes!("/tmp/rick-roll.gif");
+
+        Self::with_rick(RICK_ROLL)
     }
 }
 
@@ -120,17 +137,22 @@ impl ResponseSender for RickRoll {
     // We need to tell them how much of a rick they will be getting through headers
     #[inline]
     fn resp_on_header<'h>(&'h mut self, at: usize) -> H11Header<'h> {
-        self.headers[at]
+        match at {
+            0 => H11Header::ContentLength(H11MaybeValue::Integer(
+                self.rick_len_buf.format(self.rick.len()).as_bytes(),
+            )),
+            _ => unreachable!(),
+        }
     }
     // Runtime asks us how much rick of we are going to send
     #[inline]
     fn resp_body_len(&mut self) -> ResponseBodySize {
-        ResponseBodySize::Fixed(RICK_ROLL.len())
+        ResponseBodySize::Fixed(self.rick.len())
     }
     // Runtime wants more rick so let's send them more rick
     #[inline]
     fn resp_on_body(&mut self, len: usize) -> &[u8] {
-        let rick_len = RICK_ROLL.len();
+        let rick_len = self.rick.len();
 
         if self.payload_out_cursor.consumed == rick_len {
             return &[];
@@ -146,7 +168,7 @@ impl ResponseSender for RickRoll {
                 consumed + remaining_capacity
             };
             self.payload_out_cursor.consumed += roll_end - consumed;
-            &RICK_ROLL[consumed..roll_end]
+            &self.rick[consumed..roll_end]
         } else {
             &[]
         }

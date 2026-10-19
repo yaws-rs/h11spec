@@ -12,6 +12,7 @@ categories = ["science"]
 
 [dependencies]
 blueprint-h11spec = { path = "../../blueprint", version = "0.0.2", default-features = false, features = ["h11server"] }
+itoa = { version = "1", default-features = false }
 
 [dev-dependencies]
 insta = { version = "1.47" }
