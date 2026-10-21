@@ -27,6 +27,12 @@ pub use h11types::{
     Resp2xx, RespComplete, RespIndicative, ResponseBodySize, ResponseSender, StatusDesc,
 };
 
+/// Reset App
+pub trait Reset {
+    /// Implement to reset for the next request
+    fn reset(&mut self);
+}
+
 /// State machine stages
 #[derive(Debug, Default, PartialEq)]
 pub enum H11ServingStage {
@@ -71,13 +77,13 @@ pub struct H11Serving<App> {
     app: App,
 }
 
-impl<App: Default> H11Serving<App> {
+impl<App: Reset> H11Serving<App> {
     fn reset_app(&mut self) {
         self.stage = H11ServingStage::default();
         self.status_out = StatusOut::default();
         self.expected_response_len = ResponseBodySize::default();
         self.expected_filled = 0;
-        self.app = App::default();
+        self.app.reset();
     }
 }
 
@@ -85,7 +91,7 @@ const CRLF: &[u8] = "\r\n".as_bytes();
 
 impl<App> Orbit for H11Serving<App>
 where
-    App: ResponseSender + RequestReceiver + RequestHeaderReceiver + RequestBodyReceiver + Default,
+    App: ResponseSender + RequestReceiver + RequestHeaderReceiver + RequestBodyReceiver + Reset,
 {
     type Position = Position;
     type Error = H11Error;
@@ -355,7 +361,12 @@ pub struct H11ServerConfig;
 
 impl<App> BluePrint<H11Serving<App>> for H11SpecServer
 where
-    App: ResponseSender + RequestReceiver + RequestHeaderReceiver + RequestBodyReceiver + Default,
+    App: ResponseSender
+        + RequestReceiver
+        + RequestHeaderReceiver
+        + RequestBodyReceiver
+        + Reset
+        + Default,
 {
     type Config = H11ServerConfig;
     type Error = H11Error;

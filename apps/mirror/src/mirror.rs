@@ -1,5 +1,6 @@
 //! Mirror as a Service
 
+use blueprint_h11spec::Reset;
 use blueprint_h11spec::Resp2xx;
 use blueprint_h11spec::{H11Header, H11MaybeValue};
 use blueprint_h11spec::{H11Method, H11Version};
@@ -32,6 +33,12 @@ pub struct Mirror {
 #[derive(Debug, Default)]
 pub struct PayloadCursor {
     consumed: usize,
+}
+
+impl Reset for Mirror {
+    fn reset(&mut self) {
+        *self = Self::default()
+    }
 }
 
 impl Default for Mirror {
