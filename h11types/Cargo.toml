@@ -1,6 +1,6 @@
 [package]
 name = "h11types"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 description = "h11spec core types"
 homepage = "https://github.com/yaws-rs/h11spec"

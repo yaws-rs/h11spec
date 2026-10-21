@@ -195,6 +195,7 @@ mod test {
     #[case("\r\n\r\n", 0)]
     #[case("\r\n\r\nfoo", 3)]
     #[case("Host: test.rustcryp.to:8181\r\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:151.0) Gecko/20100101 Firefox/151.0\r\nAccept: image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate, br, zstd\r\nDNT: 1\r\nSec-GPC: 1\r\nConnection: keep-alive\r\nReferer: https://test.rustcryp.to:8181/\r\nSec-Fetch-Dest: image\r\nSec-Fetch-Mode: no-cors\r\nSec-Fetch-Site: same-origin\r\nPriority: u=6\r\nPragma: no-cache\r\nCache-Control: no-cache\r\n\r\n", 0)]
+    #[case("Host: test.rustcryp.to:1234\r\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:151.0) Gecko/20100101 Firefox/151.0\r\nAccept: image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate, br, zstd\r\nDNT: 1\r\nSec-GPC: 1\r\nConnection: keep-alive\r\nReferer: https://test.rustcryp.to:8181/\r\nSec-Fetch-Dest: image\r\nSec-Fetch-Mode: no-cors\r\nSec-Fetch-Site: same-origin\r\nPriority: u=6\r\nPragma: no-cache\r\nCache-Control: no-cache\r\n\r\n", 0)]
     fn headers_complete(
         #[context] ctx: Context,
         #[case] tc_input: &'static str,

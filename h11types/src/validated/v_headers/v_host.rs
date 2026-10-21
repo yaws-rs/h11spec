@@ -20,6 +20,7 @@ impl TryFrom<HeaderValueToken<'_>> for H11Host {
     fn try_from(tok: HeaderValueToken<'_>) -> Result<Self, Self::Error> {
         match tok {
             HeaderValueToken::Integer(i) => Ok(Self(i)),
+            HeaderValueToken::Value(i) => Ok(Self(i)),            
             _ => Err(HeaderValidationError::ExpectedInteger),
         }
     }
