@@ -1,6 +1,6 @@
 [package]
 name = "yaws-app-mirror"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2021"
 description = "YAWS app Mirror As a Service"
 homepage = "https://github.com/yaws-rs/h11spec"
@@ -11,7 +11,7 @@ repository = "https://github.com/yaws-rs/h11spec"
 categories = ["science"]
 
 [dependencies]
-blueprint-h11spec = { path = "../../blueprint", version = "0.0.3", default-features = false, features = ["h11server"] }
+blueprint-h11spec = { path = "../../blueprint", version = "0.0.4", default-features = false, features = ["h11server"] }
 
 [dev-dependencies]
 insta = { version = "1.47" }
