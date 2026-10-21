@@ -1,6 +1,6 @@
 [package]
 name = "blueprint-h11spec"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2021"
 description = "yaws h11spec blueprint"
 homepage = "https://github.com/yaws-rs/h11spec"
