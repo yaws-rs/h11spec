@@ -359,6 +359,29 @@ pub struct H11SpecServer;
 /// Placeholder for H11ServerConfig
 pub struct H11ServerConfig;
 
+impl<App> H11Serving<App>
+where
+    App: ResponseSender
+        + RequestReceiver
+        + RequestHeaderReceiver
+        + RequestBodyReceiver
+        + Reset
+        + Default,
+{
+    /// Initialize H11Serving with the specified pre-initialized App
+    pub fn with_app(app: App) -> Self {
+        Self {
+            stage: H11ServingStage::default(),
+            req_meta: H11RequestMeta::default(),
+            req_relayed: 0,
+            status_out: StatusOut::default(),
+            expected_response_len: ResponseBodySize::default(),
+            expected_filled: 0,
+            app,
+        }
+    }
+}
+
 impl<App> BluePrint<H11Serving<App>> for H11SpecServer
 where
     App: ResponseSender
