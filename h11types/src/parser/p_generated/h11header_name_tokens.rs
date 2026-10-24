@@ -6,16 +6,24 @@ use logos::Logos;
 #[allow(missing_docs)]
 #[logos(utf8 = false)]
 pub(crate) enum HeaderKeyToken<'raw> {
-    #[regex(r"(?i:Content-Length):\s*", priority = 100)]
-    ContentLength,
-    #[regex(r"(?i:Set-Cookie):\s*", priority = 100)]
-    SetCookie,
-    #[regex(r"(?i:Host):\s*", priority = 100)]
-    Host,
+    #[regex(r"(?i:Accept):\s*", priority = 100)]
+    Accept,
     #[regex(r"(?:Connection):\s*", priority = 100)]
     Connection,
+    #[regex(r"(?i:Content-Length):\s*", priority = 100)]
+    ContentLength,
+    #[regex(r"(?i:Host):\s*", priority = 100)]
+    Host,
+    #[regex(r"(?i:HTTP2-Settings):\s*", priority = 100)]
+    Http2Settings,
+    #[regex(r"(?i:Set-Cookie):\s*", priority = 100)]
+    SetCookie,
     #[regex(r"(?:Transfer-Encoding):\s*", priority = 100)]
     TransferEncoding,
+    #[regex(r"(?:Upgrade):\s*", priority = 100)]
+    Upgrade,
+    #[regex(r"(?:User-Agent):\s*", priority = 100)]
+    UserAgent,
     #[regex(r"\r\n\r\n", priority = 100)]
     EmptyHeaders,
     #[regex(r"\r\n", priority = 50)]

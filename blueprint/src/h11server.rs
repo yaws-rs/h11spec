@@ -328,7 +328,7 @@ where
                     let remaining = borrow_remaining_left_b(left_out_b, 0, 22);
 
                     let bad_request =
-                        "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n".as_bytes();
+                        "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n".as_bytes();
 
                     let filled = match try_fill_left_with(remaining, &[bad_request, CRLF]) {
                         FillAttempt::Complete(filled) => filled,

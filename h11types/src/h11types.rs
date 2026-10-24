@@ -41,20 +41,26 @@ pub enum H11Version {
 
 /// HTTP Connection type - RFC 9110 7.6.1
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
-pub enum H11Connection {
+pub enum H11Connection<'h> {
     /// Close
     #[default]
     Close,
     /// Keep-Alive
     KeepAlive,
+    /// HTTP2 Upgrade
+    Http2Upgrade,
+    /// Unknown Other
+    Other(&'h [u8]),
 }
 
-impl H11Connection {
+impl<'h> H11Connection<'h> {
     /// Conection header as bytes
     pub fn as_bytes_out(&self) -> &[u8] {
         match self {
             Self::Close => "Close",
             Self::KeepAlive => "Keep-Alive",
+            Self::Http2Upgrade => "Upgrade, HTTP2-Settings",
+            Self::Other(o) => return o,
         }
         .as_bytes()
     }
@@ -147,16 +153,24 @@ impl H11RequestMeta {
 /// HTTP/1.1 RFC 9110 Mandated Headers
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum H11Header<'h> {
+    /// RFC 9110 s.
+    Accept(H11MaybeValue<'h>),
     /// RFC 9110 s. 7.6.1
-    Connection(H11Connection),
+    Connection(H11Connection<'h>),
     /// RFC 9110 s. 8.6
     ContentLength(H11MaybeValue<'h>),
-    /// draft-ietf-httpbis-rfc6265bis-22 s. 5.8.1 & 4.1
-    SetCookie(H11MaybeValue<'h>),
     /// RFC 9110 s. 7.2
     Host(H11MaybeValue<'h>),
+    /// HTTP/2 Upgrade
+    Http2Settings(H11MaybeValue<'h>),
+    /// draft-ietf-httpbis-rfc6265bis-22 s. 5.8.1 & 4.1
+    SetCookie(H11MaybeValue<'h>),
     /// RFC 9110 s. 6.1
     TransferEncoding(H11TransferEncoding),
+    /// RFC 9110
+    Upgrade(H11MaybeValue<'h>),
+    /// RFC 9110
+    UserAgent(H11MaybeValue<'h>),
     /// Unknown header field containing maybe a header value
     Unknown(H11UnknownField<'h>, H11MaybeValue<'h>),
 }
@@ -226,11 +240,15 @@ impl<'h> H11Header<'h> {
     /// Caller is rquired to concatenate due to non-allocating nature of the library.
     pub fn as_bytes_out(&self) -> (&[u8], &[u8]) {
         let (field, value) = match self {
+            Self::Accept(a) => ("Accept".as_bytes(), a.as_bytes_out()),
             Self::Connection(c) => ("Connection".as_bytes(), c.as_bytes_out()),
             Self::ContentLength(l) => ("Content-Length".as_bytes(), l.as_bytes_out()),
-            Self::SetCookie(c) => ("Set-Cookie".as_bytes(), c.as_bytes_out()),
             Self::Host(h) => ("Host".as_bytes(), h.as_bytes_out()),
+            Self::Http2Settings(s) => ("HTTP2-Settings".as_bytes(), s.as_bytes_out()),
+            Self::SetCookie(c) => ("Set-Cookie".as_bytes(), c.as_bytes_out()),
             Self::TransferEncoding(te) => ("Transfer-Encoding".as_bytes(), te.as_bytes_out()),
+            Self::Upgrade(u) => ("Upgrade".as_bytes(), u.as_bytes_out()),
+            Self::UserAgent(ua) => ("User-Agent".as_bytes(), ua.as_bytes_out()),
             Self::Unknown(field, value) => (field.as_bytes_out(), value.as_bytes_out()),
         };
         (field, value)

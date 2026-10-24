@@ -17,14 +17,18 @@ impl<'h> TryFrom<(HeaderKeyToken<'h>, HeaderValueToken<'h>)> for H11Header<'h> {
 
     fn try_from(tokens: (HeaderKeyToken<'h>, HeaderValueToken<'h>)) -> Result<Self, Self::Error> {
         match tokens.0 {
-            HeaderKeyToken::ContentLength => Ok(H11Header::ContentLength(tokens.1.try_into()?)),
-            HeaderKeyToken::Other(o) => Ok(H11Header::Unknown(o.into(), tokens.1.try_into()?)),
-            HeaderKeyToken::SetCookie => Ok(H11Header::SetCookie(tokens.1.try_into()?)),
-            HeaderKeyToken::Host => Ok(H11Header::Host(tokens.1.try_into()?)),
+            HeaderKeyToken::Accept => Ok(H11Header::Accept(tokens.1.try_into()?)),
             HeaderKeyToken::Connection => Ok(H11Header::Connection(tokens.1.try_into()?)),
+            HeaderKeyToken::ContentLength => Ok(H11Header::ContentLength(tokens.1.try_into()?)),
+            HeaderKeyToken::Host => Ok(H11Header::Host(tokens.1.try_into()?)),
+            HeaderKeyToken::Http2Settings => Ok(H11Header::Http2Settings(tokens.1.try_into()?)),
+            HeaderKeyToken::SetCookie => Ok(H11Header::SetCookie(tokens.1.try_into()?)),
             HeaderKeyToken::TransferEncoding => {
                 Ok(H11Header::TransferEncoding(tokens.1.try_into()?))
             }
+            HeaderKeyToken::Upgrade => Ok(H11Header::Upgrade(tokens.1.try_into()?)),
+            HeaderKeyToken::UserAgent => Ok(H11Header::UserAgent(tokens.1.try_into()?)),
+            HeaderKeyToken::Other(o) => Ok(H11Header::Unknown(o.into(), tokens.1.try_into()?)),
             #[allow(unreachable_patterns)]
             _ => todo!(),
         }
