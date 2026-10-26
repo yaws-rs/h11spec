@@ -30,7 +30,7 @@ impl H11TransferEncoding {
 }
 
 /// HTTP Version
-#[derive(Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub enum H11Version {
     /// Unknown version
     #[default]
@@ -67,7 +67,7 @@ impl<'h> H11Connection<'h> {
 }
 
 /// HTTP Compression scheme
-#[derive(Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub enum H11TransferCompression {
     /// None
     #[default]
@@ -106,7 +106,7 @@ impl RequestBodySize {
 }
 
 /// Used by the server
-#[derive(Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct H11RequestMeta {
     pub(crate) method: H11Method,
     pub(crate) target_loc: Option<(usize, usize)>,
