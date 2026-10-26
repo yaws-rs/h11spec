@@ -8,6 +8,8 @@ This sans-io package is used by YAWS for HTTP/1.1 Implementation.
 
 | Crate       | Description                     |
 | :---        | :---                            |
+| [h11types](./h11types) | Core H11spec Types       |
+| [blueprint-h11spec](./blueprint) | H11Spec BluePrint & Orbit Implementation |
 
 ### License
 
