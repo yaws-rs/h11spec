@@ -37,7 +37,7 @@ impl TryFrom<&[u8]> for H11Method {
         let r = match i {
             [67, 79, 78, 78, 78, 69, 67, 84] => Self::Connect,
             [68, 69, 76, 69, 84, 69] => Self::Delete,
-            [71, 69, 84] => Self::Delete,
+            [71, 69, 84] => Self::Get,
             [72, 69, 65, 68] => Self::Head,
             [79, 80, 84, 73, 79, 78, 83] => Self::Options,
             [80, 65, 84, 67, 72] => Self::Patch,
