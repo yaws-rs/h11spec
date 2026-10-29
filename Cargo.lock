@@ -49,7 +49,7 @@ checksum = "f41c3356dcfd6d77fe8a2c437079760cc44b1370b579dea360b5637eb995411f"
 
 [[package]]
 name = "blueprint-h11spec"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "blueprint",
  "h11types",
@@ -380,7 +380,7 @@ checksum = "0cc23270f6e1808e30a928bdc84dea0b9b4136a8bc82338574f23baf47bbd280"
 
 [[package]]
 name = "h11types"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "criterion",
  "httparse",
@@ -1074,7 +1074,7 @@ checksum = "d7249219f66ced02969388cf2bb044a09756a083d0fab1e566056b04d9fbcaa5"
 
 [[package]]
 name = "yaws-app-mirror"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "blueprint-h11spec",
  "criterion",
@@ -1084,7 +1084,7 @@ dependencies = [
 
 [[package]]
 name = "yaws-app-rick-roll"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "blueprint-h11spec",
  "criterion",
@@ -1095,7 +1095,7 @@ dependencies = [
 
 [[package]]
 name = "yaws-h11spec-test-bp"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "blueprint",
  "blueprint-h11spec",

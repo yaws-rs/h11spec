@@ -1,6 +1,6 @@
 [package]
 name = "yaws-h11spec-test-bp"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2021"
 description = "YAWS Blueprint tester"
 homepage = "https://github.com/yaws-rs/h11spec"
@@ -12,8 +12,8 @@ categories = ["science"]
 
 [dependencies]
 blueprint = { version = "0.2", default-features = false }
-blueprint-h11spec = { path = "../blueprint", version = "0.0.5", default-features = false, features = ["h11server"] }
-yaws-app-rick-roll = { path = "../apps/rick_roll", version = "0.0.5", default-features = false }
+blueprint-h11spec = { path = "../blueprint", version = "0.0.6", default-features = false, features = ["h11server"] }
+yaws-app-rick-roll = { path = "../apps/rick_roll", version = "0.0.6", default-features = false }
 
 [dev-dependencies]
 insta = { version = "1.47" }
